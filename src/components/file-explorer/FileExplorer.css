@@ -112,3 +112,8 @@ vertical-align: top
   color:rgb(189, 189, 189);
   fill:rgb(189, 189, 189);
 }
+.file-item.downloading{
+  color:rgb(189, 189, 189);
+  fill:rgb(189, 189, 189);
+  cursor: not-allowed;
+}

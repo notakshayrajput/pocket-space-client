@@ -5,7 +5,7 @@ import {
   LoadingOutlined,
   MoreOutlined,
 } from "@ant-design/icons";
-import { Dropdown, notification, Tooltip, type MenuProps } from "antd";
+import { Dropdown, App, Tooltip, type MenuProps } from "antd";
 import type { FileSystemEntry } from "../../types";
 import { downloadFile } from "../../services/util";
 
@@ -21,17 +21,17 @@ const FileItem: React.FC<{
       label: downloading ? "Preparing" : "Download",
       onClick: () => handleDownload(),
       className: `download-item ${downloading ? "downloading" : ""}`,
-      icon: downloading ? <LoadingOutlined /> : <DownloadOutlined />,
+      icon: downloading ? <LoadingOutlined className="loading-icon"/> : <DownloadOutlined />,
     },
   ];
-  const [api, contextHolder] = notification.useNotification();
+  const {notification} = App.useApp();
 
   const handleDownload = async () => {
   const filePath = item.relativePath;
   setDownloading(true);
 
   const key = `download-${filePath}`;
-  api.open({
+  notification.open({
     key,
     message: "Serving it right up...",
     description: (
@@ -47,7 +47,7 @@ const FileItem: React.FC<{
     await downloadFile([filePath]);
 
     // Update notification to show "Download started" and auto-close in 3s
-    api.success({
+    notification.success({
       key,
       message: "Download started!",
       description: (
@@ -59,7 +59,7 @@ const FileItem: React.FC<{
     });
   } catch (error) {
     console.error("Download error:", error);
-    api.error({
+    notification.error({
       key,
       message: "Download Failed",
       description: "There was an error while downloading.",
@@ -72,7 +72,7 @@ const FileItem: React.FC<{
   return (
     <div
       key={item.relativePath}
-      className={`file-item ${viewMode === "grid" ? "grid-item" : "list-item"}`}
+      className={`file-item ${downloading ? "downloading" : ""} ${viewMode === "grid" ? "grid-item" : "list-item"}`}
     >
       {/* Dropdown for grid mode - top right */}
       {viewMode === "grid" && (
@@ -106,7 +106,6 @@ const FileItem: React.FC<{
           </Dropdown>
         )}
       </div>
-      {contextHolder}
     </div>
   );
 };
