@@ -14,7 +14,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <ConfigProvider
         prefixCls="ps"
       >
-        <AntdApp notification={{stack:{ threshold: 5 }}}> 
+        <AntdApp notification={{stack:{ threshold: 3 }}}> 
           <App />
         </AntdApp>
       </ConfigProvider>
