@@ -31,7 +31,8 @@ export default class HttpService {
     method: string,
     url: string,
     data?: any,
-    customHeaders: Record<string, string> = {}
+    customHeaders: Record<string, string> = {},
+  getRawResponse: boolean = false 
   ): Promise<T> {
     const fullUrl = `${this.baseUrl}${url}`;
     const options: RequestInit = {
@@ -49,6 +50,9 @@ export default class HttpService {
         const errorBody = await response.json().catch(() => ({}));
         throw new Error(errorBody.message || `HTTP error! status: ${response.status}`);
       }
+       if (getRawResponse) {
+      return response as Response as T;
+    }
       return await response.json();
     } catch (error: any) {
       console.error(`[HTTP ${method}] ${url}`, error);
@@ -60,8 +64,8 @@ export default class HttpService {
     return this.request<T>("GET", url);
   }
 
-  public post<T>(url: string, data: any): Promise<T> {
-    return this.request<T>("POST", url, data);
+  public post<T>(url: string, data: any,getRawResponse:boolean=false): Promise<T> {
+    return this.request<T>("POST", url, data,undefined,getRawResponse);
   }
 
   public put<T>(url: string, data: any): Promise<T> {
