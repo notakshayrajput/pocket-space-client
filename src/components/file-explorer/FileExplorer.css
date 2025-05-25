@@ -70,3 +70,45 @@
 height:1.5em;
 vertical-align: top
 }
+.grid-item {
+  position: relative;
+}
+.more-icon-grid {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+}
+
+.file-item-bottom {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+}
+
+/* File name always centered in grid, grows in list */
+.file-item-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.list-item .file-item-bottom {
+  justify-content: space-between;
+  padding-right: 8px;
+}
+
+.list-item .file-item-name {
+  flex-grow: 1;
+  max-width: 100%;
+  text-align: left;
+}
+.download-item.downloading{
+  font-style: italic;
+  color:rgb(189, 189, 189);
+  fill:rgb(189, 189, 189);
+}

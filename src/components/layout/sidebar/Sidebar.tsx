@@ -27,29 +27,29 @@ const Sidebar: React.FC = () => {
   };
   return (
     <Flex className={`sidebar ${collapsed ? "collapsed" : ""}`} vertical>
-      <Flex className="sidebar-brand" align="center">
         <Link to="/" className="sidebar-link">
+      <Flex className="sidebar-brand" align="center">
           <BrandLogo style={{ fontSize: 28 }} />
           {!collapsed && <span className="brand-title">Pocket Space</span>}
-        </Link>
       </Flex>
+        </Link>
       <Flex className="sidebar-item toggle-button" onClick={toggleSidebar}>
         <MenuOutlined className="sidebar-icon" />
         {!collapsed && <span className="sidebar-text">Menu</span>}
       </Flex>
 
-      <Flex className="sidebar-item">
         <Link to="/" className="sidebar-link">
+      <Flex className="sidebar-item">
           <ProductOutlined className="sidebar-icon" />
           {!collapsed && <span className="sidebar-text">Home</span>}
-        </Link>
       </Flex>
-      <Flex className="sidebar-item">
+        </Link>
         <Link to="/files" className="sidebar-link">
+      <Flex className="sidebar-item">
           <FolderOutlined  className="sidebar-icon" />
           {!collapsed && <span className="sidebar-text">Files</span>}
-        </Link>
       </Flex>
+        </Link>
     </Flex>
   );
 };

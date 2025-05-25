@@ -1,41 +1,112 @@
-import React from "react";
-import { FileOutlined } from "@ant-design/icons";
-import { Tooltip } from "antd";
+import React, { useState } from "react";
+import {
+  DownloadOutlined,
+  FileOutlined,
+  LoadingOutlined,
+  MoreOutlined,
+} from "@ant-design/icons";
+import { Dropdown, notification, Tooltip, type MenuProps } from "antd";
 import type { FileSystemEntry } from "../../types";
+import { downloadFile } from "../../services/util";
 
 const FileItem: React.FC<{
   item: FileSystemEntry;
   viewMode: "grid" | "list";
 }> = ({ item, viewMode }) => {
-  const dotIndex = item.name.lastIndexOf(".");
-  const base = dotIndex !== -1 ? item.name.slice(0, dotIndex) : item.name;
-  const ext = dotIndex !== -1 ? item.name.slice(dotIndex) : "";
+
+  const [downloading, setDownloading] = useState(false);
+  const menuItems: MenuProps["items"] = [
+    {
+      key: "download",
+      label: downloading ? "Preparing" : "Download",
+      onClick: () => handleDownload(),
+      className: `download-item ${downloading ? "downloading" : ""}`,
+      icon: downloading ? <LoadingOutlined /> : <DownloadOutlined />,
+    },
+  ];
+  const [api, contextHolder] = notification.useNotification();
+
+  const handleDownload = async () => {
+  const filePath = item.relativePath;
+  setDownloading(true);
+
+  const key = `download-${filePath}`;
+  api.open({
+    key,
+    message: "Serving it right up...",
+    description: (
+      <>
+        Getting <strong>{item.name}</strong> ready for you.
+      </>
+    ),
+    icon: <LoadingOutlined />,
+    duration: 0,
+  });
+
+  try {
+    await downloadFile([filePath]);
+
+    // Update notification to show "Download started" and auto-close in 3s
+    api.success({
+      key,
+      message: "Download started!",
+      description: (
+        <>
+          <strong>{item.name}</strong> is on its way.
+        </>
+      ),
+      duration: 3,
+    });
+  } catch (error) {
+    console.error("Download error:", error);
+    api.error({
+      key,
+      message: "Download Failed",
+      description: "There was an error while downloading.",
+    });
+  } finally {
+    setDownloading(false);
+  }
+};
 
   return (
     <div
       key={item.relativePath}
       className={`file-item ${viewMode === "grid" ? "grid-item" : "list-item"}`}
     >
-      <FileOutlined style={{ fontSize: 48 }} />
-      <Tooltip title={item.name}  placement="bottom">
-        <div
-          className="file-item-name"
-        >
-          <span
-            style={{
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              minWidth: 0,
-              maxWidth: "calc(100% - 40px)",
-              display: "inline-block",
-            }}
-          >
-            {base}
-          </span>
-          <span style={{ flexShrink: 0}}>{ext}</span>
+      {/* Dropdown for grid mode - top right */}
+      {viewMode === "grid" && (
+        <div className="more-icon-grid">
+          <Dropdown menu={{ items: menuItems }} trigger={["click"]}>
+            <MoreOutlined
+              onClick={(e) => e.stopPropagation()}
+              style={{ fontSize: 18, cursor: "pointer" }}
+            />
+          </Dropdown>
         </div>
-      </Tooltip>
+      )}
+
+      <FileOutlined style={{ fontSize: 48 }} />
+
+      {/* File name and menu in list mode */}
+      <div className="file-item-bottom">
+        <Tooltip title={item.name} placement="bottom">
+          <div className="file-item-name">
+            {item.name}
+          </div>
+        </Tooltip>
+
+        {/* Dropdown for list mode - right aligned */}
+        {viewMode === "list" && (
+          <Dropdown menu={{ items: menuItems }} trigger={["click"]}>
+            <MoreOutlined
+              onClick={(e) => e.stopPropagation()}
+              style={{ fontSize: 18, marginLeft: "auto", cursor: "pointer" }}
+            />
+          </Dropdown>
+        )}
+      </div>
+      {contextHolder}
     </div>
   );
 };
