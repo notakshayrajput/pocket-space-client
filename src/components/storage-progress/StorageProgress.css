@@ -1,0 +1,11 @@
+.unavailable {
+  background: var(--ps-progrss-unavailable);
+}
+
+.backup {
+  background: var(--ps-progress-backup);
+}
+
+.available {
+  background: var(--ps-progress-available);
+}

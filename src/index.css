@@ -1,0 +1,34 @@
+:root {
+  --ps-color-1:#EAEFEF;
+  --ps-color-2:#B8CFCE;
+  --ps-color-3:#7F8CAA;
+  --ps-color-4:#333446;
+
+  --ps-border-radius: 8px;
+  --ps-box-shadow:rgba(0, 0, 0, 0.35) 0px 5px 15px;
+  --ps-padding-medium: 12px;
+  --ps-padding-small: 8px;
+  --ps-padding-large: 16px;
+  --ps-margin-medium: 12px;
+  --ps-margin-small: 8px;
+  --ps-margin-large: 16px;
+
+  --ps-background-color: var(--ps-color-1);
+  --ps-background-color-dark: var(--ps-color-4);
+  --ps-background-color-light: #ffffff;
+
+  /* Sidebar */
+  --ps-sidebar-item-size: 24px;
+  --ps-progrss-unavailable: repeating-linear-gradient(
+  135deg,
+  #eed2d2,
+  #eed2d2 4px,
+  #a78080 4px,
+  #a78080 6px
+);
+  --ps-progress-available: #e9e7e7;
+  --ps-progress-backup: #80bbff;
+
+  --ps-file-item-hover-bg: var(--ps-color-1);
+  --ps-file-item-hover-shadow: rgba(0, 0, 0, 0.1) 0 5px 15px;
+}

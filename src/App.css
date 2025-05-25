@@ -1,0 +1,7 @@
+.panel{
+  border-radius: var(--ps-border-radius);
+  box-shadow: var(--ps-box-shadow);
+  padding:var(--ps-padding-medium);
+  margin:var(--ps-margin-medium);
+  background: var(--ps-background-color-light);
+}
