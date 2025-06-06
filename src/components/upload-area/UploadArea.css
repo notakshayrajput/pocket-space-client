@@ -1,0 +1,14 @@
+.upload-area {
+    width: 100%;
+    height: 200px;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    cursor: pointer;
+    color:#666;
+    margin-bottom:20px
+}
+.upload-area:hover {
+  background-color: #e6f7ff;
+  border-color: var(--ps-color-2);
+}

@@ -37,12 +37,19 @@ export default class HttpService {
     const fullUrl = `${this.baseUrl}${url}`;
     const options: RequestInit = {
       method,
-      headers: this.getHeaders(customHeaders),
+      headers: this.getHeaders(customHeaders) || {},
     };
 
     if (data && method !== "GET") {
-      options.body = JSON.stringify(data);
-    }
+  if (data instanceof FormData) {
+    // Let the browser set correct headers for multipart/form-data
+    delete (options.headers as any)["Content-Type"];
+    options.body = data;
+  } else {
+    options.body = JSON.stringify(data);
+  }
+}
+
 
     try {
       const response = await fetch(fullUrl, options);

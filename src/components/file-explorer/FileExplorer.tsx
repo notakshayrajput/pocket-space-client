@@ -12,7 +12,8 @@ import type { FolderInfo, FileSystemEntry } from "../../types";
 import { Button, Segmented, Tooltip } from "antd";
 import FolderItem from "./FolderItem";
 import FileItem from "./FileItem";
-import "./FileExplorer.css"; 
+import "./FileExplorer.css";
+import UploadArea from "../upload-area/UploadArea";
 
 const FileExplorer: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -34,14 +35,15 @@ const FileExplorer: React.FC = () => {
   }, [relativePath]);
 
   const renderItem = (item: FileSystemEntry) =>
-  item.isFolder ? (
-    <FolderItem key={item.relativePath} item={item} viewMode={viewMode} />
-  ) : (
-    <FileItem key={item.relativePath} item={item} viewMode={viewMode} />
-  );
+    item.isFolder ? (
+      <FolderItem key={item.relativePath} item={item} viewMode={viewMode} />
+    ) : (
+      <FileItem key={item.relativePath} item={item} viewMode={viewMode} />
+    );
 
   return (
     <div className="file-explorer">
+      <UploadArea />
       <div
         style={{
           display: "flex",
@@ -50,27 +52,26 @@ const FileExplorer: React.FC = () => {
           gap: 8,
         }}
       >
-        <Segmented className="segmented-view-mode"
-    options={[
-      {
-        value: "grid",
-        icon: <AppstoreOutlined  />,
-        // label: <Tooltip title="Grid View">Grid</Tooltip>,
-      },
-      {
-        value: "list",
-        icon: <BarsOutlined />,
-        // label: <Tooltip title="List View">List</Tooltip>,
-      },
-    ]}
-    value={viewMode}
-    onChange={(val) => setViewMode(val as "grid" | "list")}
-  />
+        <Segmented
+          className="segmented-view-mode"
+          options={[
+            {
+              value: "grid",
+              icon: <AppstoreOutlined />,
+              // label: <Tooltip title="Grid View">Grid</Tooltip>,
+            },
+            {
+              value: "list",
+              icon: <BarsOutlined />,
+              // label: <Tooltip title="List View">List</Tooltip>,
+            },
+          ]}
+          value={viewMode}
+          onChange={(val) => setViewMode(val as "grid" | "list")}
+        />
       </div>
 
-      <div
-       className={ viewMode=='grid' ? "grid" : "list" }
-      >
+      <div className={viewMode == "grid" ? "grid" : "list"}>
         {fileInfo?.files?.map(renderItem)}
       </div>
     </div>
