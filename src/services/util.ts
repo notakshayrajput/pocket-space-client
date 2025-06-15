@@ -1,4 +1,4 @@
-import DownloadService from "../services/download-service";
+import FileService from "./file-service";
 export function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 Bytes";
   const k = 1024;
@@ -10,7 +10,7 @@ export function formatBytes(bytes: number): string {
 
 
 export async function downloadFile(paths: string[]): Promise<void> {
-  const response = await DownloadService.downloadFiles(paths);
+  const response = await FileService.downloadFiles(paths);
 
   if (!response.ok) {
     throw new Error(`Failed to download: ${response.statusText}`);

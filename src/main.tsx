@@ -6,20 +6,25 @@ import './index.css';
 import 'antd/dist/reset.css'; 
 import { ConfigProvider,notification, App as AntdApp } from 'antd';
 import theme from './themes'; 
+import { store } from './store/store';
+import { Provider } from 'react-redux';
 
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   
   <React.StrictMode>
     <BrowserRouter>
+    <Provider store={store}>
       <ConfigProvider
         prefixCls="ps"
         theme={theme} 
       >
         <AntdApp notification={{stack:{ threshold: 3 }}}> 
+          
           <App />
         </AntdApp>
       </ConfigProvider>
+    </Provider>
     </BrowserRouter>
   </React.StrictMode>
 );
