@@ -11,6 +11,7 @@ const breadcrumbItems = [
 ];
 
 const Home: React.FC = () => {
+  
   return (
     <AppLayout>
       <Breadcrumb items={breadcrumbItems} />

@@ -1,23 +1,18 @@
 import React, { useEffect, useState } from "react";
 import SpaceService from "../../services/space-service";
-import {
-  Card,
-  Spin,
-  Alert,
-  Descriptions,
-  Tooltip,
-  Skeleton,
-} from "antd";
+import { Card, Spin, Alert, Descriptions, Tooltip, Skeleton } from "antd";
 import type { DriveStats } from "../../types";
 import { formatBytes } from "../../services/util";
 import StorageProgress from "../storage-progress/StorageProgress";
 import { InfoCircleOutlined } from "@ant-design/icons";
+import { useWebSocketStatus } from "../../hooks/web-socket/WebSocket";
 
 const DriveStatsPanel: React.FC = () => {
   const [stats, setStats] = useState<DriveStats | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { status } = useWebSocketStatus();
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -29,15 +24,24 @@ const DriveStatsPanel: React.FC = () => {
         setLoading(false);
       }
     };
-
-    fetchStats();
-  }, []);
+    console.log("Fetching drive stats...", status);
+    if (!stats || status === "Connected") {
+      setError(null);
+      fetchStats();
+    }
+  }, [status]);
 
   if (error) return <Alert type="error" message={error} />;
 
   const skeletonContent = (
     <Descriptions title="Drive Info" bordered column={1} size="small">
-      {["Directory", "Total Space", "Available", "Backup Size", "Unavailable"].map((label) => (
+      {[
+        "Directory",
+        "Total Space",
+        "Available",
+        "Backup Size",
+        "Unavailable",
+      ].map((label) => (
         <Descriptions.Item label={label} key={label}>
           <Skeleton.Input style={{ width: 200 }} active size="small" />
         </Descriptions.Item>
@@ -107,7 +111,8 @@ const DriveStatsPanel: React.FC = () => {
         >
           {formatBytes(
             stats.totalSpace - stats.availableSpace - stats.occupiedSpace
-          )} (
+          )}{" "}
+          (
           {(
             ((stats.totalSpace - stats.availableSpace - stats.occupiedSpace) /
               stats.totalSpace) *
@@ -124,7 +129,7 @@ const DriveStatsPanel: React.FC = () => {
   );
 
   return (
-    <Card title="Drive Statistics" style={{ width: 400 }}>
+    <Card title="Home" style={{ width: 400 }}>
       {loading ? skeletonContent : loadedContent}
     </Card>
   );

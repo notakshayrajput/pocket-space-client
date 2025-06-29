@@ -8,7 +8,7 @@ export default class UploadService {
     files.forEach((file) => {
       formData.append("Files", file); // Match the C# property name exactly
     });
-    formData.append("DestinationPath", destinationPath); // This is needed!
+    formData.append("DestinationPath", destinationPath||"/"); // This is needed!
 
     return await HttpService.getInstance().post<any>("/upload", formData, true);
   }
