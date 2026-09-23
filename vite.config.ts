@@ -4,7 +4,6 @@ import react from '@vitejs/plugin-react-swc';
 import svgr from 'vite-plugin-svgr';
 
 import path from 'path';
-import fs from 'fs';
 
 export default defineConfig({
   plugins: [react(),  svgr({ 
@@ -13,14 +12,21 @@ export default defineConfig({
     },
   }),],
   server: {
-    https: {
-      key: fs.readFileSync(path.resolve(__dirname, "certs/localhost-key.pem")),
-      cert: fs.readFileSync(path.resolve(__dirname, "certs/localhost.pem")),
-    },
     port: 5173,
+    strictPort: true,
     host: "localhost",
     watch: {
       usePolling: true
+    },
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5008',
+        changeOrigin: true,
+      },
+      '/ws': {
+        target: 'ws://localhost:5008',
+        ws: true,
+      },
     }
   },
   css: {

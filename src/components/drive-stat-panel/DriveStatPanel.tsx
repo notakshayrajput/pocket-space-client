@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import SpaceService from "../../services/space-service";
-import { Card, Spin, Alert, Descriptions, Tooltip, Skeleton } from "antd";
+import { Card, Alert, Descriptions, Tooltip, Skeleton } from "antd";
 import type { DriveStats } from "../../types";
 import { formatBytes } from "../../services/util";
 import StorageProgress from "../storage-progress/StorageProgress";

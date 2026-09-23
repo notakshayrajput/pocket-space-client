@@ -1,4 +1,3 @@
-import React from "react";
 import { useWebSocketStatus } from "../../hooks/web-socket/WebSocket";
 
 export const ServerStatusIndicator = () => {
@@ -16,6 +15,6 @@ export const ServerStatusIndicator = () => {
           {serverState || "Unknown"}
         </span>
       </div>
-    </div>
+    </div>    
   );
 };

@@ -4,7 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
 import 'antd/dist/reset.css'; 
-import { ConfigProvider,notification, App as AntdApp } from 'antd';
+import { ConfigProvider, App as AntdApp } from 'antd';
 import theme from './themes'; 
 import { store } from './store/store';
 import { Provider } from 'react-redux';

@@ -1,5 +1,5 @@
 export default class HttpService {
-  private baseUrl = import.meta.env.VITE_API_BASE_URL || "";
+  private baseUrl = import.meta.env.VITE_API_BASE_URL || "/api";
   private token: string | null = null;
 
   private constructor(token?: string) {

@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, Tooltip } from "antd";
+import { Tooltip } from "antd";
 import type { DriveStats } from "../../types";
 import { formatBytes } from "../../services/util";
 import "./StorageProgress.css"; 

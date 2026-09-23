@@ -5,8 +5,6 @@ import React, { useEffect, useState } from "react";
 import "./Sidebar.css"; // Make sure this CSS file exists
 import BrandLogo from "../../icons/BrandLogo";
 
-interface ISidebarProps {}
-
 const LOCAL_STORAGE_KEY = "pocketspace.sidebar-collapsed";
 
 const Sidebar: React.FC = () => {
