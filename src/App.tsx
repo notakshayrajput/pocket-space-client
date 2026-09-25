@@ -10,6 +10,7 @@ import Settings from "./screens/settings/Settings";
 import "./App.css";
 import Home from "./screens/home/Home";
 import FilesScreen from "./screens/files-screen/FilesScreen";
+import Trash from "./screens/trash/Trash";
 
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Home />} />
           <Route path="/files" element={<FilesScreen />} />
+          <Route path="/trash" element={<Trash />} />
           <Route path="/admin/users" element={<PendingUsers />} />
           <Route path="/admin/password-resets" element={<PasswordResetRequests />} />
           <Route path="/settings" element={<Settings />} />

@@ -117,3 +117,22 @@ vertical-align: top
   fill:rgb(189, 189, 189);
   cursor: not-allowed;
 }
+.favorite-grid {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+}
+.file-item-details {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+.file-item-location {
+  color: #646477;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  margin-top: 3px;
+}

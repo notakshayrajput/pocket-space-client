@@ -5,9 +5,14 @@ import {
   FileOutlined,
   LoadingOutlined,
   MoreOutlined,
+  StarFilled,
+  StarOutlined,
+  DeleteOutlined,
+  FolderOpenOutlined,
 } from "@ant-design/icons";
-import { Dropdown, App, Input, Modal, Tooltip, type MenuProps } from "antd";
+import { Button, Dropdown, App, Input, Modal, Tooltip, type MenuProps } from "antd";
 import HttpService from "../../services/http-service";
+import FileService from "../../services/file-service";
 import { useNavigate } from "react-router-dom";
 import type { FileSystemEntry } from "../../types";
 import { downloadFile } from "../../services/util";
@@ -19,13 +24,24 @@ const FileExplorerItem: React.FC<{
   selected?: boolean;
   onToggleSelect?: () => void;
   onChanged: () => void;
-}> = ({ item, viewMode, selectionMode, selected, onToggleSelect, onChanged }) => {
+  showLocation?: boolean;
+}> = ({ item, viewMode, selectionMode, selected, onToggleSelect, onChanged, showLocation }) => {
   const navigate = useNavigate();
   const path = `/files?path=${encodeURIComponent(item.relativePath)}`;
   const { notification, modal } = App.useApp();
   const [renaming, setRenaming] = useState(false);
   const [name, setName] = useState(item.name);
   const [saving, setSaving] = useState(false);
+  const [favoriting, setFavoriting] = useState(false);
+  const favorite = async () => {
+    setFavoriting(true);
+    try {
+      await FileService.setFavorite(item.id, !item.isFavorite);
+      onChanged();
+    } catch (failure) {
+      notification.error({ message: failure instanceof Error ? failure.message : "Could not update favorite." });
+    } finally { setFavoriting(false); }
+  };
   const rename = async () => {
     setSaving(true);
     try {
@@ -37,15 +53,16 @@ const FileExplorerItem: React.FC<{
     } finally { setSaving(false); }
   };
   const remove = () => modal.confirm({
-    title: `Delete ${item.name}?`,
-    content: item.isFolder ? "This permanently deletes the folder and all files inside it." : "This permanently deletes the file.",
-    okText: "Delete", okButtonProps: { danger: true },
+    title: `Move ${item.name} to Trash?`,
+    content: item.isFolder ? "This folder and its contents will be kept in Trash for seven days. You can restore them before they are automatically deleted." : "This file will be kept in Trash for seven days. You can restore it before it is automatically deleted.",
+    okText: "Move to Trash", okButtonProps: { danger: true },
     onOk: async () => {
       try {
         await HttpService.getInstance().delete<void>(`/space/entry?path=${encodeURIComponent(item.relativePath)}`);
+        notification.success({ message: "Moved to Trash", description: "You have seven days to restore this item." });
         onChanged();
       } catch (failure) {
-        notification.error({ message: failure instanceof Error ? failure.message : "Delete failed." });
+        notification.error({ message: failure instanceof Error ? failure.message : "Could not move to Trash." });
         throw failure;
       }
     },
@@ -87,6 +104,7 @@ const FileExplorerItem: React.FC<{
 
     try {
       await downloadFile([filePath]);
+      onChanged();
 
       notification.success({
         key,
@@ -125,7 +143,9 @@ const FileExplorerItem: React.FC<{
         ),
       },
       { key: "rename", label: "Rename", onClick: () => { setName(item.name); setRenaming(true); } },
-      { key: "delete", label: "Delete", danger: true, onClick: remove },
+      { key: "location", label: "Open containing folder", icon: <FolderOpenOutlined />,
+        onClick: () => navigate(`/files?path=${encodeURIComponent(item.relativePath.split('/').slice(0, -1).join('/') || '.')}`) },
+      { key: "delete", label: "Move to Trash", icon: <DeleteOutlined />, danger: true, onClick: remove },
     ];
   // : [];
 
@@ -155,13 +175,20 @@ const FileExplorerItem: React.FC<{
       {viewMode === "grid" && menuItems.length > 0 && (
         <div className="more-icon-grid">
           <Dropdown menu={{ items: menuItems }} trigger={["click"]}>
-            <MoreOutlined
+            <Button type="text" size="small" aria-label={`Actions for ${item.name}`} icon={<MoreOutlined />}
               onClick={(e) => e.stopPropagation()}
-              style={{ fontSize: 18, cursor: "pointer" }}
             />
           </Dropdown>
         </div>
       )}
+
+      {!isFolder && !selectionMode && <Tooltip title={item.isFavorite ? "Remove from favorites" : "Add to favorites"}>
+        <Button type="text" size="small" className={viewMode === "grid" ? "favorite-grid" : undefined}
+          aria-label={`${item.isFavorite ? "Remove from" : "Add to"} favorites: ${item.name}`}
+          aria-pressed={item.isFavorite} loading={favoriting}
+          icon={item.isFavorite ? <StarFilled style={{ color: "#ad6800" }} /> : <StarOutlined />}
+          onClick={event => { event.stopPropagation(); void favorite(); }} />
+      </Tooltip>}
 
       {/* Icon */}
       {isFolder ? (
@@ -184,15 +211,21 @@ const FileExplorerItem: React.FC<{
             style={{ position: "absolute", top: 8, left: 8, zIndex: 1 }}
           />
         )}
-        <Tooltip title={item.name} placement="bottom">
-          <div className="file-item-name">{item.name}</div>
-        </Tooltip>
+        <div className="file-item-details">
+          <Tooltip title={item.name} placement="bottom">
+            <div className="file-item-name">{item.name}</div>
+          </Tooltip>
+          {showLocation && <div className="file-item-location" title={item.relativePath}>{item.relativePath}</div>}
+          {showLocation && <div className="file-item-location">Last used {new Date(item.recentAt).toLocaleString()}</div>}
+        </div>
+
+        {showLocation && <Button type="text" aria-label={`Download ${item.name}`} icon={<DownloadOutlined />} loading={downloading}
+          onClick={event => { event.stopPropagation(); void handleDownload(); }} />}
 
         {viewMode === "list" && menuItems.length > 0 && (
           <Dropdown menu={{ items: menuItems }} trigger={["click"]}>
-            <MoreOutlined
+            <Button type="text" size="small" aria-label={`Actions for ${item.name}`} icon={<MoreOutlined />}
               onClick={(e) => e.stopPropagation()}
-              style={{ fontSize: 18, marginLeft: "auto", cursor: "pointer" }}
             />
           </Dropdown>
         )}

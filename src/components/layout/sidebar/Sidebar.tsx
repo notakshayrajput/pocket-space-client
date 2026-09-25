@@ -1,5 +1,5 @@
 import { Flex } from "antd";
-import { FolderOutlined, MenuOutlined, ProductOutlined, SettingOutlined, KeyOutlined } from "@ant-design/icons";
+import { FolderOutlined, MenuOutlined, ProductOutlined, SettingOutlined, KeyOutlined, DeleteOutlined } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import "./Sidebar.css"; // Make sure this CSS file exists
@@ -50,6 +50,11 @@ const Sidebar: React.FC = () => {
           {!collapsed && <span className="sidebar-text">Files</span>}
       </Flex>
         </Link>
+      <Link to="/trash" className="sidebar-link" aria-label="Trash">
+        <Flex className="sidebar-item"><DeleteOutlined className="sidebar-icon" />
+          {!collapsed && <span className="sidebar-text">Trash</span>}
+        </Flex>
+      </Link>
       <Link to="/settings" className="sidebar-link" aria-label="Settings">
         <Flex className="sidebar-item"><SettingOutlined className="sidebar-icon" />
           {!collapsed && <span className="sidebar-text">Settings</span>}
