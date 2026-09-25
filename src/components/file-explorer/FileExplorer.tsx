@@ -10,12 +10,13 @@ import {
 } from "@ant-design/icons";
 import { useSelector, useDispatch } from "react-redux";
 import type { FileSystemEntry } from "../../types";
-import { Button, Segmented, App, Flex } from "antd";
+import { Alert, Button, Empty, Input, Modal, Segmented, App, Flex, Spin } from "antd";
+import HttpService from "../../services/http-service";
 import "./FileExplorer.css";
 import UploadArea from "../upload-area/UploadArea";
 import FileExplorerItem from "./FileExplorerItem";
 import { downloadFile } from "../../services/util";
-import { fetchFolderInfoIfNeeded } from "../../store/features/fileExplorer/fileExplorerSlice";
+import { clearFileCache, fetchFolderInfoIfNeeded } from "../../store/features/fileExplorer/fileExplorerSlice";
 import type { RootState, AppDispatch } from "../../store/store";
 const FileExplorer: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -27,14 +28,36 @@ const FileExplorer: React.FC = () => {
   );
   const { notification } = App.useApp();
   const [selectionMode, setSelectionMode] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [folderName, setFolderName] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const dispatch = useDispatch<AppDispatch>();
+  const loading = useSelector((state: RootState) => state.fileExplorer.loadingPaths[relativePath]);
+  const error = useSelector((state: RootState) => state.fileExplorer.errors[relativePath]);
+  const refresh = () => {
+    setSelectedItems(new Set());
+    dispatch(clearFileCache());
+    void dispatch(fetchFolderInfoIfNeeded(relativePath));
+  };
+  const createFolder = async () => {
+    setSaving(true);
+    try {
+      await HttpService.getInstance().post<void>("/space/folders", { parentPath: relativePath, name: folderName });
+      setCreating(false);
+      setFolderName("");
+      refresh();
+    } catch (failure) {
+      notification.error({ message: failure instanceof Error ? failure.message : "Could not create folder." });
+    } finally { setSaving(false); }
+  };
   const fileInfo = useSelector((state: RootState) => {
     if (relativePath===undefined || relativePath === null) return undefined;
     return state.fileExplorer.cache[relativePath];
   });
 
   useEffect(() => {
+    setSelectedItems(new Set());
     if (relativePath===undefined || relativePath === null) return; {
       dispatch(fetchFolderInfoIfNeeded(relativePath));
     }
@@ -47,6 +70,7 @@ const FileExplorer: React.FC = () => {
       viewMode={viewMode}
       selectionMode={selectionMode}
       selected={selectedItems.has(item)}
+      onChanged={refresh}
       onToggleSelect={() => toggleSelection(item)}
     />
   );
@@ -106,7 +130,11 @@ const FileExplorer: React.FC = () => {
 
   return (
     <div className="file-explorer">
-      <UploadArea />
+      <UploadArea onUploaded={refresh} />
+      <Modal title="New folder" open={creating} onCancel={() => setCreating(false)} onOk={() => void createFolder()}
+        confirmLoading={saving} okButtonProps={{ disabled: !folderName.trim() }}>
+        <Input aria-label="Folder name" value={folderName} onChange={event => setFolderName(event.target.value)} />
+      </Modal>
       <Flex
         justify="space-between"
         style={{
@@ -125,6 +153,8 @@ const FileExplorer: React.FC = () => {
           >
             {selectionMode ? "Exit Selection" : "Select Items"}
           </Button>
+          <Button onClick={() => setCreating(true)}>New folder</Button>
+          <Button onClick={refresh}>Refresh</Button>
           {selectionMode && (
             <>
               <Button onClick={clearSelection} icon={<CloseCircleOutlined />}>
@@ -160,6 +190,9 @@ const FileExplorer: React.FC = () => {
         />
       </Flex>
 
+      {error && <Alert type="error" showIcon message={error} />}
+      {loading && <Spin aria-label="Loading files" />}
+      {!loading && !error && fileInfo?.files.length === 0 && <Empty description="Your folder is empty. Upload a file to get started." />}
       <div className={viewMode == "grid" ? "grid" : "list"}>
         {fileInfo?.files?.map(renderItem)}
       </div>

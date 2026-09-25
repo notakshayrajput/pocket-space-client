@@ -1,0 +1,11 @@
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--ps-background-color);
+}
+
+.login-card { width: 100%; max-width: 420px; box-shadow: 0 12px 40px #33344614; }
+.login-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; color: var(--ps-color-4); font-size: 22px; font-weight: 600; }
+.login-alert { margin-bottom: 20px; }

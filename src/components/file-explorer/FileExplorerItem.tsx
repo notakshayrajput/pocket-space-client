@@ -6,7 +6,8 @@ import {
   LoadingOutlined,
   MoreOutlined,
 } from "@ant-design/icons";
-import { Dropdown, App, Tooltip, type MenuProps } from "antd";
+import { Dropdown, App, Input, Modal, Tooltip, type MenuProps } from "antd";
+import HttpService from "../../services/http-service";
 import { useNavigate } from "react-router-dom";
 import type { FileSystemEntry } from "../../types";
 import { downloadFile } from "../../services/util";
@@ -17,10 +18,38 @@ const FileExplorerItem: React.FC<{
   selectionMode?: boolean;
   selected?: boolean;
   onToggleSelect?: () => void;
-}> = ({ item, viewMode, selectionMode, selected, onToggleSelect }) => {
+  onChanged: () => void;
+}> = ({ item, viewMode, selectionMode, selected, onToggleSelect, onChanged }) => {
   const navigate = useNavigate();
   const path = `/files?path=${encodeURIComponent(item.relativePath)}`;
-  const { notification } = App.useApp();
+  const { notification, modal } = App.useApp();
+  const [renaming, setRenaming] = useState(false);
+  const [name, setName] = useState(item.name);
+  const [saving, setSaving] = useState(false);
+  const rename = async () => {
+    setSaving(true);
+    try {
+      await HttpService.getInstance().post<void>("/space/rename", { path: item.relativePath, name });
+      setRenaming(false);
+      onChanged();
+    } catch (failure) {
+      notification.error({ message: failure instanceof Error ? failure.message : "Rename failed." });
+    } finally { setSaving(false); }
+  };
+  const remove = () => modal.confirm({
+    title: `Delete ${item.name}?`,
+    content: item.isFolder ? "This permanently deletes the folder and all files inside it." : "This permanently deletes the file.",
+    okText: "Delete", okButtonProps: { danger: true },
+    onOk: async () => {
+      try {
+        await HttpService.getInstance().delete<void>(`/space/entry?path=${encodeURIComponent(item.relativePath)}`);
+        onChanged();
+      } catch (failure) {
+        notification.error({ message: failure instanceof Error ? failure.message : "Delete failed." });
+        throw failure;
+      }
+    },
+  });
   const [downloading, setDownloading] = useState(false);
 
   const isFolder = item.isFolder;
@@ -95,10 +124,13 @@ const FileExplorerItem: React.FC<{
           <DownloadOutlined />
         ),
       },
+      { key: "rename", label: "Rename", onClick: () => { setName(item.name); setRenaming(true); } },
+      { key: "delete", label: "Delete", danger: true, onClick: remove },
     ];
   // : [];
 
   return (
+    <>
     <div
       key={item.relativePath}
       className={`file-item ${isFolder ? "folder" : ""} ${
@@ -166,6 +198,11 @@ const FileExplorerItem: React.FC<{
         )}
       </div>
     </div>
+    <Modal title="Rename" open={renaming} onCancel={() => setRenaming(false)} onOk={() => void rename()}
+      confirmLoading={saving} okButtonProps={{ disabled: !name.trim() }}>
+      <Input aria-label="New name" value={name} onChange={event => setName(event.target.value)} />
+    </Modal>
+    </>
   );
 };
 

@@ -5,11 +5,12 @@ import { useSearchParams } from "react-router-dom";
 import "./UploadArea.css";
 import UploadService from "../../services/upload-service";
 
-const UploadArea: React.FC = () => {
+const UploadArea: React.FC<{ onUploaded: () => void }> = ({ onUploaded }) => {
   const [searchParams] = useSearchParams();
   const destinationPath = searchParams.get("path") || "";
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const handleAreaClick = () => {
     fileInputRef.current?.click();
@@ -41,19 +42,23 @@ const UploadArea: React.FC = () => {
       return;
     }
 
+    setUploading(true);
     try {
       console.log("Uploading files:", selectedFiles, "to path:", destinationPath);
       const response = await UploadService.uploadFiles(selectedFiles, destinationPath);
       if (response.ok) {
         message.success("Files uploaded successfully.");
         setSelectedFiles([]);
+        onUploaded();
       } else {
         const text = await response.text();
         message.error(`Upload failed: ${text}`);
       }
     } catch (err) {
       console.error(err);
-      message.error("An error occurred during upload.");
+      message.error(err instanceof Error ? err.message : "An error occurred during upload.");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -94,6 +99,7 @@ const UploadArea: React.FC = () => {
             <List.Item
               actions={[
                 <Button
+                  key="remove"
                   type="text"
                   icon={<CloseOutlined />}
                   onClick={() => handleRemoveFile(index)}
@@ -114,6 +120,7 @@ const UploadArea: React.FC = () => {
           type="primary"
           icon={<UploadOutlined />}
           disabled={!selectedFiles.length}
+          loading={uploading}
           onClick={handleUpload}
         >
           Upload
