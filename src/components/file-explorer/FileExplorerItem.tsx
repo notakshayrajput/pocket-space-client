@@ -143,8 +143,8 @@ const FileExplorerItem: React.FC<{
         ),
       },
       { key: "rename", label: "Rename", onClick: () => { setName(item.name); setRenaming(true); } },
-      { key: "location", label: "Open containing folder", icon: <FolderOpenOutlined />,
-        onClick: () => navigate(`/files?path=${encodeURIComponent(item.relativePath.split('/').slice(0, -1).join('/') || '.')}`) },
+      ...(showLocation ? [{ key: "location", label: "Open containing folder", icon: <FolderOpenOutlined />,
+        onClick: () => navigate(`/files?path=${encodeURIComponent(item.relativePath.split('/').slice(0, -1).join('/') || '.')}`) }] : []),
       { key: "delete", label: "Move to Trash", icon: <DeleteOutlined />, danger: true, onClick: remove },
     ];
   // : [];

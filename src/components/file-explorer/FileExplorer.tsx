@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   AppstoreOutlined,
@@ -7,14 +7,18 @@ import {
   CheckSquareOutlined,
   DownloadOutlined,
   LoadingOutlined,
+  SearchOutlined,
+  SortAscendingOutlined,
+  SortDescendingOutlined,
 } from "@ant-design/icons";
 import { useSelector, useDispatch } from "react-redux";
 import type { FileSystemEntry } from "../../types";
-import { Alert, Button, Empty, Input, Modal, Segmented, App, Flex, Spin } from "antd";
+import { Alert, Button, Empty, Input, Modal, Segmented, Select, App, Flex, Spin } from "antd";
 import HttpService from "../../services/http-service";
 import "./FileExplorer.css";
 import UploadArea from "../upload-area/UploadArea";
 import FileExplorerItem from "./FileExplorerItem";
+import { filterAndSortFiles, type FileSortDirection, type FileSortField } from "./file-list";
 import { downloadFile } from "../../services/util";
 import { clearFileCache, fetchFolderInfoIfNeeded } from "../../store/features/fileExplorer/fileExplorerSlice";
 import type { RootState, AppDispatch } from "../../store/store";
@@ -23,6 +27,9 @@ const FileExplorer: React.FC = () => {
   const relativePath = searchParams.get("path") || ".";
   // const [fileInfo, setFileInfo] = useState<FolderInfo>();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortField, setSortField] = useState<FileSortField>("createdAt");
+  const [sortDirection, setSortDirection] = useState<FileSortDirection>("desc");
   const [selectedItems, setSelectedItems] = useState<Set<FileSystemEntry>>(
     new Set()
   );
@@ -55,9 +62,13 @@ const FileExplorer: React.FC = () => {
     if (relativePath===undefined || relativePath === null) return undefined;
     return state.fileExplorer.cache[relativePath];
   });
+  const visibleFiles = useMemo(() => filterAndSortFiles(
+    fileInfo?.files ?? [], searchQuery, sortField, sortDirection,
+  ), [fileInfo?.files, searchQuery, sortField, sortDirection]);
 
   useEffect(() => {
     setSelectedItems(new Set());
+    setSearchQuery("");
     if (relativePath===undefined || relativePath === null) return; {
       dispatch(fetchFolderInfoIfNeeded(relativePath));
     }
@@ -137,12 +148,15 @@ const FileExplorer: React.FC = () => {
       </Modal>
       <Flex
         justify="space-between"
+        align="center"
+        wrap="wrap"
         style={{
           marginBottom: 16,
           gap: 8,
         }}
       >
         <Flex
+          wrap="wrap"
           style={{
             gap: 8,
           }}
@@ -171,30 +185,59 @@ const FileExplorer: React.FC = () => {
             </>
           )}
         </Flex>
-        <Segmented
-          className="segmented-view-mode"
-          options={[
-            {
-              value: "grid",
-              icon: <AppstoreOutlined />,
-              // label: <Tooltip title="Grid View">Grid</Tooltip>,
-            },
-            {
-              value: "list",
-              icon: <BarsOutlined />,
-              // label: <Tooltip title="List View">List</Tooltip>,
-            },
-          ]}
-          value={viewMode}
-          onChange={(val) => setViewMode(val as "grid" | "list")}
-        />
+        <Flex align="center" wrap="wrap" gap={8}>
+          <Input
+            className="file-search"
+            aria-label="Search file names in this folder"
+            placeholder="Search this folder"
+            prefix={<SearchOutlined />}
+            allowClear
+            value={searchQuery}
+            onChange={event => setSearchQuery(event.target.value)}
+          />
+          <Select<FileSortField>
+            className="file-sort"
+            aria-label="Sort files by"
+            value={sortField}
+            options={[
+              { label: "Name", value: "name" },
+              { label: "Size", value: "size" },
+              { label: "Date modified", value: "lastModified" },
+              { label: "Date created", value: "createdAt" },
+            ]}
+            onChange={value => {
+              setSortField(value);
+              setSortDirection(value === "name" ? "asc" : "desc");
+            }}
+          />
+          <Button
+            aria-label={`Sort ${sortDirection === "asc" ? "descending" : "ascending"}`}
+            title={`Sort ${sortDirection === "asc" ? "descending" : "ascending"}`}
+            icon={sortDirection === "asc" ? <SortAscendingOutlined /> : <SortDescendingOutlined />}
+            onClick={() => setSortDirection(value => value === "asc" ? "desc" : "asc")}
+          />
+          <Segmented
+            className="segmented-view-mode"
+            options={[
+              { value: "grid", icon: <AppstoreOutlined /> },
+              { value: "list", icon: <BarsOutlined /> },
+            ]}
+            value={viewMode}
+            onChange={(val) => setViewMode(val as "grid" | "list")}
+          />
+        </Flex>
       </Flex>
 
       {error && <Alert type="error" showIcon message={error} />}
       {loading && <Spin aria-label="Loading files" />}
       {!loading && !error && fileInfo?.files.length === 0 && <Empty description="Your folder is empty. Upload a file to get started." />}
+      {!loading && !error && fileInfo && fileInfo.files.length > 0 && visibleFiles.length === 0 && (
+        <Empty description="No matching names in this folder.">
+          <Button onClick={() => setSearchQuery("")}>Clear search</Button>
+        </Empty>
+      )}
       <div className={viewMode == "grid" ? "grid" : "list"}>
-        {fileInfo?.files?.map(renderItem)}
+        {visibleFiles.map(renderItem)}
       </div>
     </div>
   );

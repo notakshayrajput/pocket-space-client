@@ -15,6 +15,13 @@
 .ps-segmented.segmented-view-mode {
   font-size: 18px;
 }
+.file-explorer .file-search {
+  width: 220px;
+  max-width: 100%;
+}
+.file-explorer .file-sort {
+  min-width: 160px;
+}
 .file-item {
   width: 200px;
   height: 200px;
