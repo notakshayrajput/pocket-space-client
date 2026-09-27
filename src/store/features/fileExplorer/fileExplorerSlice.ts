@@ -1,36 +1,39 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import type { FolderInfo } from '../../../types';
+import type { FolderInfo, FolderPageRequest } from '../../../types';
 import SpaceService from '../../../services/space-service';
 
 interface FileExplorerState {
   cache: Record<string, FolderInfo>;
-  loadingPaths: Record<string, boolean>;
+  loading: Record<string, boolean>;
   requests: Record<string, string>;
   errors: Record<string, string>;
 }
 
 const initialState: FileExplorerState = {
   cache: {},
-  loadingPaths: {},
+  loading: {},
   requests: {},
   errors: {},
 };
 
-// Async thunk to fetch folder info
-export const fetchFolderInfoIfNeeded = createAsyncThunk<
+export const folderQueryKey = (request: Omit<FolderPageRequest, 'offset'>) =>
+  JSON.stringify([request.relativePath, request.search, request.sortBy, request.direction]);
+
+export const fetchFolderPage = createAsyncThunk<
   FolderInfo,
-  string,
+  FolderPageRequest,
   { state: { fileExplorer: FileExplorerState } }
 >(
-  'fileExplorer/fetchFolderInfoIfNeeded',
-  async (relativePath) => {
-    const data = await SpaceService.getFolderInfo(relativePath);
-    return data;
-  },
+  'fileExplorer/fetchFolderPage',
+  (request) => SpaceService.getFolderInfo(request),
   {
-    condition: (relativePath, { getState }) => {
-      const state = getState();
-      return !state.fileExplorer.cache[relativePath]; // only fetch if not already in cache
+    condition: (request, { getState }) => {
+      const state = getState().fileExplorer;
+      const key = folderQueryKey(request);
+      if (state.loading[key]) return false;
+      const cached = state.cache[key];
+      if (request.offset === 0) return !cached;
+      return !!cached && cached.hasMore && cached.nextOffset === request.offset;
     },
   }
 );
@@ -41,23 +44,29 @@ const fileExplorerSlice = createSlice({
   reducers: { clearFileCache: () => initialState },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchFolderInfoIfNeeded.pending, (state, action) => {
-        state.loadingPaths[action.meta.arg] = true;
-        delete state.errors[action.meta.arg];
-        state.requests[action.meta.arg] = action.meta.requestId;
+      .addCase(fetchFolderPage.pending, (state, action) => {
+        const key = folderQueryKey(action.meta.arg);
+        state.loading[key] = true;
+        delete state.errors[key];
+        state.requests[key] = action.meta.requestId;
       })
-      .addCase(fetchFolderInfoIfNeeded.fulfilled, (state, action) => {
-        if (state.requests[action.meta.arg] !== action.meta.requestId) return;
-        const folderInfo = action.payload;
-        state.cache[action.meta.arg] = folderInfo;
-        delete state.loadingPaths[action.meta.arg];
-        delete state.requests[action.meta.arg];
+      .addCase(fetchFolderPage.fulfilled, (state, action) => {
+        const key = folderQueryKey(action.meta.arg);
+        if (state.requests[key] !== action.meta.requestId) return;
+        const page = action.payload;
+        state.cache[key] = action.meta.arg.offset === 0 ? page : {
+          ...page,
+          files: [...state.cache[key].files, ...page.files],
+        };
+        delete state.loading[key];
+        delete state.requests[key];
       })
-      .addCase(fetchFolderInfoIfNeeded.rejected, (state, action) => {
-        if (state.requests[action.meta.arg] !== action.meta.requestId) return;
-        state.errors[action.meta.arg] = action.error.message || "Could not load this folder.";
-        delete state.loadingPaths[action.meta.arg];
-        delete state.requests[action.meta.arg];
+      .addCase(fetchFolderPage.rejected, (state, action) => {
+        const key = folderQueryKey(action.meta.arg);
+        if (state.requests[key] !== action.meta.requestId) return;
+        state.errors[key] = action.error.message || "Could not load this folder.";
+        delete state.loading[key];
+        delete state.requests[key];
       });
   },
 });

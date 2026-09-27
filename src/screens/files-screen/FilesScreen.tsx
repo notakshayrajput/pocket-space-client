@@ -5,9 +5,7 @@ import FileExplorer from "../../components/file-explorer/FileExplorer";
 import { Breadcrumb, Divider } from "antd";
 import { HomeOutlined } from "@ant-design/icons";
 
-interface IFilesScreenProps {}
-
-const FilesScreen: React.FC<IFilesScreenProps> = () => {
+const FilesScreen: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const relativePath = searchParams.get("path");
@@ -46,7 +44,7 @@ const FilesScreen: React.FC<IFilesScreenProps> = () => {
     <AppLayout>
       <Breadcrumb items={breadcrumbItems} />
       <Divider style={{margin:"12px 0"}}/>
-      <FileExplorer />
+      <FileExplorer key={relativePath || "."} />
     </AppLayout>
   );
 };

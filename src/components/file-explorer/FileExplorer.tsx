@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   AppstoreOutlined,
@@ -12,27 +12,27 @@ import {
   SortDescendingOutlined,
 } from "@ant-design/icons";
 import { useSelector, useDispatch } from "react-redux";
-import type { FileSystemEntry } from "../../types";
+import type { FileSortDirection, FileSortField, FileSystemEntry } from "../../types";
 import { Alert, Button, Empty, Input, Modal, Segmented, Select, App, Flex, Spin } from "antd";
 import HttpService from "../../services/http-service";
 import "./FileExplorer.css";
 import UploadArea from "../upload-area/UploadArea";
 import FileExplorerItem from "./FileExplorerItem";
-import { filterAndSortFiles, type FileSortDirection, type FileSortField } from "./file-list";
 import { downloadFile } from "../../services/util";
-import { clearFileCache, fetchFolderInfoIfNeeded } from "../../store/features/fileExplorer/fileExplorerSlice";
+import { clearFileCache, fetchFolderPage, folderQueryKey } from "../../store/features/fileExplorer/fileExplorerSlice";
 import type { RootState, AppDispatch } from "../../store/store";
 const FileExplorer: React.FC = () => {
   const [searchParams] = useSearchParams();
   const relativePath = searchParams.get("path") || ".";
-  // const [fileInfo, setFileInfo] = useState<FolderInfo>();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeSearch, setActiveSearch] = useState("");
   const [sortField, setSortField] = useState<FileSortField>("createdAt");
   const [sortDirection, setSortDirection] = useState<FileSortDirection>("desc");
-  const [selectedItems, setSelectedItems] = useState<Set<FileSystemEntry>>(
+  const [selectedPaths, setSelectedPaths] = useState<Set<string>>(
     new Set()
   );
+  const loadMoreRef = useRef<HTMLDivElement>(null);
   const { notification } = App.useApp();
   const [selectionMode, setSelectionMode] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -40,12 +40,22 @@ const FileExplorer: React.FC = () => {
   const [saving, setSaving] = useState(false);
 
   const dispatch = useDispatch<AppDispatch>();
-  const loading = useSelector((state: RootState) => state.fileExplorer.loadingPaths[relativePath]);
-  const error = useSelector((state: RootState) => state.fileExplorer.errors[relativePath]);
+  const query = useMemo(() => ({
+    relativePath, search: activeSearch, sortBy: sortField, direction: sortDirection,
+  }), [relativePath, activeSearch, sortField, sortDirection]);
+  const queryKey = folderQueryKey(query);
+  const fileInfo = useSelector((state: RootState) => state.fileExplorer.cache[queryKey]);
+  const loading = useSelector((state: RootState) => state.fileExplorer.loading[queryKey]);
+  const error = useSelector((state: RootState) => state.fileExplorer.errors[queryKey]);
+  const isDebouncing = searchQuery.trim() !== activeSearch;
+  const visibleFiles = isDebouncing ? [] : fileInfo?.files ?? [];
+
   const refresh = () => {
-    setSelectedItems(new Set());
+    setSelectedPaths(new Set());
+    const search = searchQuery.trim();
+    setActiveSearch(search);
     dispatch(clearFileCache());
-    void dispatch(fetchFolderInfoIfNeeded(relativePath));
+    void dispatch(fetchFolderPage({ ...query, search, offset: 0 }));
   };
   const createFolder = async () => {
     setSaving(true);
@@ -54,25 +64,30 @@ const FileExplorer: React.FC = () => {
       setCreating(false);
       setFolderName("");
       refresh();
-    } catch (failure) {
-      notification.error({ message: failure instanceof Error ? failure.message : "Could not create folder." });
+    } catch {
+      // The request layer displays the failure.
     } finally { setSaving(false); }
   };
-  const fileInfo = useSelector((state: RootState) => {
-    if (relativePath===undefined || relativePath === null) return undefined;
-    return state.fileExplorer.cache[relativePath];
-  });
-  const visibleFiles = useMemo(() => filterAndSortFiles(
-    fileInfo?.files ?? [], searchQuery, sortField, sortDirection,
-  ), [fileInfo?.files, searchQuery, sortField, sortDirection]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setActiveSearch(searchQuery.trim()), 250);
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
-    setSelectedItems(new Set());
-    setSearchQuery("");
-    if (relativePath===undefined || relativePath === null) return; {
-      dispatch(fetchFolderInfoIfNeeded(relativePath));
-    }
-  }, [relativePath, dispatch]);
+    setSelectedPaths(new Set());
+    if (!isDebouncing) void dispatch(fetchFolderPage({ ...query, offset: 0 }));
+  }, [dispatch, query, isDebouncing]);
+
+  useEffect(() => {
+    if (isDebouncing || !fileInfo?.hasMore || loading || error || !loadMoreRef.current) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0]?.isIntersecting) {
+        void dispatch(fetchFolderPage({ ...query, offset: fileInfo.nextOffset }));
+      }
+    }, { rootMargin: "300px" });
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [dispatch, query, fileInfo?.hasMore, fileInfo?.nextOffset, loading, error, isDebouncing]);
 
   const renderItem = (item: FileSystemEntry) => (
     <FileExplorerItem
@@ -80,29 +95,28 @@ const FileExplorer: React.FC = () => {
       item={item}
       viewMode={viewMode}
       selectionMode={selectionMode}
-      selected={selectedItems.has(item)}
+      selected={selectedPaths.has(item.relativePath)}
       onChanged={refresh}
-      onToggleSelect={() => toggleSelection(item)}
+      onToggleSelect={() => toggleSelection(item.relativePath)}
     />
   );
-  const toggleSelection = (item: FileSystemEntry) => {
-    setSelectedItems((prev) => {
+  const toggleSelection = (path: string) => {
+    setSelectedPaths((prev) => {
       const updated = new Set(prev);
-      if (updated.has(item)) {
-        updated.delete(item);
+      if (updated.has(path)) {
+        updated.delete(path);
       } else {
-        updated.add(item);
+        updated.add(path);
       }
       return updated;
     });
   };
 
   const clearSelection = () => {
-    setSelectedItems(new Set());
+    setSelectedPaths(new Set());
   };
   const handleDownloadSelectedFiles = async () => {
-    const files = Array.from(selectedItems);
-    const filePaths = files.map((file) => file.relativePath);
+    const filePaths = Array.from(selectedPaths);
     if (filePaths.length === 0) {
       notification.warning({
         message: "No files to download",
@@ -126,16 +140,11 @@ const FileExplorer: React.FC = () => {
       notification.success({
         key,
         message: "Download started!",
-        description: `${filePaths.length} file(s) are being downloaded.`,
         duration: 3,
       });
     } catch (error) {
       console.error("Download failed:", error);
-      notification.error({
-        key,
-        message: "Download Failed",
-        description: "Something went wrong during the download process.",
-      });
+      notification.destroy(key);
     }
   };
 
@@ -177,7 +186,7 @@ const FileExplorer: React.FC = () => {
               <Button
                 type="primary"
                 icon={<DownloadOutlined />}
-                disabled={selectedItems.size === 0}
+                disabled={selectedPaths.size === 0}
                 onClick={handleDownloadSelectedFiles}
               >
                 Download
@@ -228,10 +237,13 @@ const FileExplorer: React.FC = () => {
         </Flex>
       </Flex>
 
-      {error && <Alert type="error" showIcon message={error} />}
-      {loading && <Spin aria-label="Loading files" />}
-      {!loading && !error && fileInfo?.files.length === 0 && <Empty description="Your folder is empty. Upload a file to get started." />}
-      {!loading && !error && fileInfo && fileInfo.files.length > 0 && visibleFiles.length === 0 && (
+      {!isDebouncing && error && !fileInfo && <Alert type="error" showIcon message={error} action={
+        <Button onClick={() => void dispatch(fetchFolderPage({ ...query, offset: 0 }))}>Retry</Button>
+      } />}
+      {(isDebouncing || (!fileInfo && !error)) && <Spin aria-label="Loading files" />}
+      {!isDebouncing && !loading && !error && fileInfo?.totalCount === 0 && !activeSearch &&
+        <Empty description="Your folder is empty. Upload a file to get started." />}
+      {!isDebouncing && !loading && !error && fileInfo?.totalCount === 0 && !!activeSearch && (
         <Empty description="No matching names in this folder.">
           <Button onClick={() => setSearchQuery("")}>Clear search</Button>
         </Empty>
@@ -239,6 +251,11 @@ const FileExplorer: React.FC = () => {
       <div className={viewMode == "grid" ? "grid" : "list"}>
         {visibleFiles.map(renderItem)}
       </div>
+      {!isDebouncing && loading && fileInfo && <div className="file-loading-more"><Spin aria-label="Loading more files" /></div>}
+      {!isDebouncing && error && fileInfo && <Alert type="error" showIcon message={error} action={
+        <Button onClick={() => void dispatch(fetchFolderPage({ ...query, offset: fileInfo.nextOffset }))}>Retry</Button>
+      } />}
+      {!isDebouncing && fileInfo?.hasMore && <div ref={loadMoreRef} aria-hidden="true" className="file-load-more" />}
     </div>
   );
 };

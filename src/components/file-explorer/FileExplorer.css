@@ -22,6 +22,14 @@
 .file-explorer .file-sort {
   min-width: 160px;
 }
+.file-explorer .file-load-more {
+  height: 1px;
+}
+.file-explorer .file-loading-more {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+}
 .file-item {
   width: 200px;
   height: 200px;
