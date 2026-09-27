@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, App, Button, Card, Empty, Flex, List, Skeleton, Typography } from 'antd';
+import { Alert, Button, Card, Empty, Flex, List, Popconfirm, Skeleton, Typography } from 'antd';
 import { DeleteOutlined, FileOutlined, FolderOutlined, ReloadOutlined, UndoOutlined } from '@ant-design/icons';
 import { useDispatch } from 'react-redux';
 import AppLayout from '../../layouts/app-layout/AppLayout';
@@ -13,10 +13,10 @@ const Trash: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [restoring, setRestoring] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
   const [now, setNow] = useState(Date.now());
   const dispatch = useDispatch();
-  const { notification } = App.useApp();
   const refresh = () => setRevision(value => value + 1);
 
   useEffect(() => {
@@ -40,11 +40,21 @@ const Trash: React.FC = () => {
     try {
       await FileService.restore(item.id);
       dispatch(clearFileCache());
-      notification.success({ message: `Restored ${item.name}`, description: 'This item is back in its original folder.' });
       refresh();
-    } catch (failure) {
-      notification.error({ message: 'Could not restore item', description: failure instanceof Error ? failure.message : 'Please try again.' });
+    } catch {
+      // The request layer displays the failure.
     } finally { setRestoring(null); }
+  };
+
+  const removePermanently = async (item: TrashEntry) => {
+    setDeleting(item.id);
+    try {
+      await FileService.deleteTrashItem(item.id);
+      dispatch(clearFileCache());
+      refresh();
+    } catch {
+      refresh();
+    } finally { setDeleting(null); }
   };
 
   return <AppLayout>
@@ -53,7 +63,7 @@ const Trash: React.FC = () => {
       <Button icon={<ReloadOutlined />} onClick={refresh} loading={loading}>Refresh</Button>
     </Flex>
     <Alert type="info" showIcon message="Items in Trash are automatically deleted after seven days."
-      description="Restore an item before its deletion date to return it to its original folder. Files in Trash do not appear in Favorites or Recent files."
+      description="Restore an item before its deletion date, or permanently delete it now to free storage. Permanent deletion cannot be undone."
       style={{ marginBottom: 20 }} />
     {error && <Alert type="error" showIcon message={error} style={{ marginBottom: 16 }} action={<Button onClick={refresh}>Try again</Button>} />}
     <Card>
@@ -61,6 +71,7 @@ const Trash: React.FC = () => {
         locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Trash is empty" /> }}
         renderItem={item => {
           const expired = Date.parse(item.expiresAt) <= now;
+          const busy = restoring !== null || deleting !== null;
           return <List.Item key={item.id}>
             <Flex align="center" justify="space-between" gap={16} wrap style={{ width: '100%' }}>
               <Flex gap={12} align="flex-start" style={{ minWidth: 0, flex: '1 1 240px' }}>
@@ -74,8 +85,17 @@ const Trash: React.FC = () => {
                   </Typography.Text></div>
                 </div>
               </Flex>
-              <Button icon={<UndoOutlined />} disabled={expired || restoring !== null} loading={restoring === item.id}
-                aria-label={`Restore ${item.name}`} onClick={() => void restore(item)}>Restore</Button>
+              <Flex gap={8} wrap>
+                <Button icon={<UndoOutlined />} disabled={expired || busy} loading={restoring === item.id}
+                  aria-label={`Restore ${item.name}`} onClick={() => void restore(item)}>Restore</Button>
+                <Popconfirm title={`Permanently delete ${item.name}?`}
+                  description="This cannot be undone."
+                  okText="Delete permanently" okButtonProps={{ danger: true }}
+                  onConfirm={() => void removePermanently(item)}>
+                  <Button danger icon={<DeleteOutlined />} disabled={busy} loading={deleting === item.id}
+                    aria-label={`Permanently delete ${item.name}`}>Delete permanently</Button>
+                </Popconfirm>
+              </Flex>
             </Flex>
           </List.Item>;
         }} />}
