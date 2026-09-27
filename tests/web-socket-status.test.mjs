@@ -73,6 +73,39 @@ test("Strict Mode setup/cleanup/setup opens one socket without interrupting a ha
   assert.equal(FakeWebSocket.instances[0].closeCalls, 0);
 });
 
+test("startup stays connected until the initial connection grace period ends", t => {
+  assert.equal(store.getSnapshot().status, "Connected");
+  store.subscribe(() => {});
+  t.mock.timers.tick(1);
+  assert.equal(FakeWebSocket.instances.length, 1);
+  t.mock.timers.tick(4998);
+  assert.equal(store.getSnapshot().status, "Connected");
+  t.mock.timers.tick(1);
+  assert.equal(store.getSnapshot().status, "Disconnected");
+  FakeWebSocket.instances[0].open();
+  assert.equal(store.getSnapshot().status, "Connected");
+});
+
+test("opening within the grace period never reports a disconnect", t => {
+  store.subscribe(() => {});
+  t.mock.timers.tick(1);
+  t.mock.timers.tick(3000);
+  FakeWebSocket.instances[0].open();
+  t.mock.timers.tick(10000);
+  assert.equal(store.getSnapshot().status, "Connected");
+});
+
+test("a failed first handshake can retry during the grace period", t => {
+  store.subscribe(() => {});
+  t.mock.timers.tick(1);
+  FakeWebSocket.instances[0].fail();
+  assert.equal(store.getSnapshot().status, "Connected");
+  t.mock.timers.tick(1000);
+  FakeWebSocket.instances[1].open();
+  t.mock.timers.tick(5000);
+  assert.equal(store.getSnapshot().status, "Connected");
+});
+
 test("unmount before deferred startup opens no socket", t => {
   store.subscribe(() => {})();
   t.mock.timers.tick(1);
@@ -91,8 +124,8 @@ test("the footer and drive panel share updates and one authenticated connection"
   socket.open();
   socket.message("server-state:Idle");
   assert.deepEqual(store.getSnapshot(), { status: "Connected", serverState: "Idle" });
-  assert.equal(footerUpdates, 2);
-  assert.equal(driveUpdates, 2);
+  assert.equal(footerUpdates, 1);
+  assert.equal(driveUpdates, 1);
   stopFooter();
   t.mock.timers.tick(1);
   assert.equal(socket.closeCalls, 0);
@@ -150,7 +183,7 @@ test("logout closes the shared connection and login uses the new token", t => {
   t.mock.timers.tick(1);
   staleOpen();
   staleClose();
-  assert.equal(store.getSnapshot().status, "Disconnected");
+  assert.equal(store.getSnapshot().status, "Connected");
   assert.deepEqual(FakeWebSocket.instances[1].protocols, ["pocketspace", "bearer.new-token"]);
   FakeWebSocket.instances[1].open();
   assert.equal(store.getSnapshot().status, "Connected");
@@ -191,8 +224,12 @@ test("constructor failures recover without throwing into React", t => {
   FakeWebSocket.failConstruction = true;
   store.subscribe(() => {});
   t.mock.timers.tick(1);
-  assert.equal(store.getSnapshot().status, "Disconnected");
+  assert.equal(store.getSnapshot().status, "Connected");
   FakeWebSocket.failConstruction = false;
   t.mock.timers.tick(1000);
   assert.equal(FakeWebSocket.instances.length, 1);
+  t.mock.timers.tick(3999);
+  assert.equal(store.getSnapshot().status, "Disconnected");
+  FakeWebSocket.instances[0].open();
+  assert.equal(store.getSnapshot().status, "Connected");
 });

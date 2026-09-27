@@ -7,15 +7,19 @@ interface StatusSnapshot {
 }
 
 const disconnected: StatusSnapshot = { status: "Disconnected", serverState: null };
+const optimistic: StatusSnapshot = { status: "Connected", serverState: null };
+const INITIAL_CONNECTION_GRACE_MS = 5000;
 
 export function createWebSocketStatusStore(getUrl: () => URL) {
   const listeners = new Set<() => void>();
-  let snapshot = disconnected;
+  let snapshot = optimistic;
   let socket: WebSocket | null = null;
   let accessToken: string | undefined;
   let connectTimer: ReturnType<typeof setTimeout> | undefined;
+  let graceTimer: ReturnType<typeof setTimeout> | undefined;
   let disposeTimer: ReturnType<typeof setTimeout> | undefined;
   let retryDelay = 1000;
+  let hasConnected = false;
 
   function publish(next: StatusSnapshot) {
     if (snapshot.status === next.status && snapshot.serverState === next.serverState) return;
@@ -23,17 +27,33 @@ export function createWebSocketStatusStore(getUrl: () => URL) {
     listeners.forEach(listener => listener());
   }
 
-  function disconnect() {
+  function stopSocket() {
     clearTimeout(connectTimer);
     connectTimer = undefined;
+    clearTimeout(graceTimer);
+    graceTimer = undefined;
     const previous = socket;
     socket = null;
     accessToken = undefined;
+    hasConnected = false;
     if (previous) {
       previous.onopen = previous.onmessage = previous.onerror = previous.onclose = null;
       previous.close();
     }
+  }
+
+  function disconnect() {
+    stopSocket();
     publish(disconnected);
+  }
+
+  function beginInitialConnection() {
+    publish(optimistic);
+    clearTimeout(graceTimer);
+    graceTimer = setTimeout(() => {
+      graceTimer = undefined;
+      if (!hasConnected && listeners.size > 0 && readSession()) publish(disconnected);
+    }, INITIAL_CONNECTION_GRACE_MS);
   }
 
   function scheduleConnect(delay: number) {
@@ -57,7 +77,7 @@ export function createWebSocketStatusStore(getUrl: () => URL) {
     try {
       current = new WebSocket(getUrl(), ["pocketspace", `bearer.${token}`]);
     } catch {
-      publish(disconnected);
+      if (hasConnected) publish(disconnected);
       retry();
       return;
     }
@@ -66,6 +86,9 @@ export function createWebSocketStatusStore(getUrl: () => URL) {
     current.onopen = () => {
       if (socket !== current) return;
       retryDelay = 1000;
+      hasConnected = true;
+      clearTimeout(graceTimer);
+      graceTimer = undefined;
       publish({ status: "Connected", serverState: null });
     };
     current.onmessage = event => {
@@ -78,13 +101,13 @@ export function createWebSocketStatusStore(getUrl: () => URL) {
     // A WebSocket error is followed by close. Let close own reconnection;
     // explicitly closing here can interrupt an in-progress handshake.
     current.onerror = () => {
-      if (socket === current) publish(disconnected);
+      if (socket === current && hasConnected) publish(disconnected);
     };
     current.onclose = () => {
       if (socket !== current) return;
       socket = null;
       accessToken = undefined;
-      publish(disconnected);
+      if (hasConnected) publish(disconnected);
       retry();
     };
   }
@@ -92,9 +115,12 @@ export function createWebSocketStatusStore(getUrl: () => URL) {
   function syncSession() {
     const token = readSession()?.accessToken;
     if (token && token === accessToken) return;
-    disconnect();
+    stopSocket();
     retryDelay = 1000;
-    if (token) scheduleConnect(0);
+    if (token) {
+      beginInitialConnection();
+      scheduleConnect(0);
+    } else publish(disconnected);
   }
 
   function dispose() {
@@ -112,6 +138,10 @@ export function createWebSocketStatusStore(getUrl: () => URL) {
       disposeTimer = undefined;
       listeners.add(listener);
       window.addEventListener(AUTH_CHANGED_EVENT, syncSession);
+      if (listeners.size === 1) {
+        if (readSession()) beginInitialConnection();
+        else publish(disconnected);
+      }
       // Wait until React finishes its setup/cleanup cycle before opening a
       // socket. All consumers share this one connection and one retry timer.
       scheduleConnect(0);

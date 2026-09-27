@@ -1,20 +1,31 @@
-import { useWebSocketStatus } from "../../hooks/web-socket/WebSocket";
+import { CheckCircleOutlined, CloudServerOutlined, DisconnectOutlined, LoadingOutlined, SyncOutlined } from "@ant-design/icons";
+import { useWebSocketStatus, type ServerState } from "../../hooks/web-socket/WebSocket";
+import "./ServerStatusIndicator.css";
+
+const stateLabels: Record<ServerState, string> = {
+  Idle: "Idle",
+  BackingUp: "Backing up",
+  UserTraffic: "Serving requests",
+  Cleaning: "Cleaning up",
+};
 
 export const ServerStatusIndicator = () => {
-  const {status, serverState} = useWebSocketStatus(); // adjust port if needed
+  const { status, serverState } = useWebSocketStatus();
+  const connected = status === "Connected";
+  const activity = connected && serverState ? stateLabels[serverState] : null;
 
   return (
-    <div>
-      Server Status:{" "}
-      <span style={{ color: status === "Connected" ? "green" : "red" }}>
-        {status}
+    <div className="server-status" role="status" aria-label={`Server ${status.toLowerCase()}${activity ? `, ${activity.toLowerCase()}` : ""}`}>
+      <span className={`server-status-connection ${connected ? "is-connected" : "is-disconnected"}`}>
+        {connected ? <CloudServerOutlined aria-hidden="true" /> : <DisconnectOutlined aria-hidden="true" />}
+        <span>Server {status.toLowerCase()}</span>
       </span>
-      <div>
-        Server State:{" "}
-        <span style={{ color: serverState === "Idle" ? "blue" : "orange" }}>
-          {serverState || "Unknown"}
+      {connected && (
+        <span className="server-status-activity">
+          {serverState === "Idle" ? <CheckCircleOutlined aria-hidden="true" /> : serverState ? <SyncOutlined spin aria-hidden="true" /> : <LoadingOutlined aria-hidden="true" />}
+          <span>{activity ?? "Checking activity"}</span>
         </span>
-      </div>
-    </div>    
+      )}
+    </div>
   );
 };

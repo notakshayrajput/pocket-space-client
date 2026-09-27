@@ -1,0 +1,43 @@
+.server-status {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.server-status-connection,
+.server-status-activity {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  padding: 4px 10px;
+  border: 1px solid;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.server-status-connection.is-connected {
+  color: #176348;
+  background: #eaf7f0;
+  border-color: #b9e4cc;
+}
+
+.server-status-connection.is-disconnected {
+  color: #9c3039;
+  background: #fff0f0;
+  border-color: #f3c4c7;
+}
+
+.server-status-activity {
+  color: #405070;
+  background: #f1f4f9;
+  border-color: #dce3ee;
+}
+
+.server-status svg {
+  font-size: 15px;
+}
