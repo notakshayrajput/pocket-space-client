@@ -3,10 +3,20 @@
     padding: var(--ps-padding-small);
     transition: width 0.3s ease;
     width: 220px;
+    flex: 0 0 220px;
+    box-sizing: border-box;
+    overflow: hidden;
   }
   
   .sidebar.collapsed {
     width: 60px;
+    flex-basis: 60px;
+  }
+
+  .sidebar-navigation {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
   }
   
   .sidebar-item {
@@ -61,4 +71,81 @@
     font-weight: bold;
     text-wrap: nowrap;
   }
-  
+
+  .sidebar-account {
+    margin-top: auto;
+    flex: none;
+    padding: 12px 4px 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+    color: white;
+  }
+
+  .sidebar-account-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 4px 2px;
+  }
+
+  .sidebar-avatar-wrap {
+    display: inline-flex;
+    flex: none;
+  }
+
+  .sidebar-avatar {
+    flex: none;
+    background: var(--ps-color-3);
+    color: white;
+  }
+
+  .sidebar-account-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+  }
+
+  .sidebar-signout {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 32px;
+    height: 32px;
+    margin-left: auto;
+    padding: 0;
+    border: 0;
+    border-radius: var(--ps-border-radius);
+    background: transparent;
+    color: white;
+    cursor: pointer;
+    font: inherit;
+    font-size: 18px;
+  }
+
+  .sidebar-signout:hover,
+  .sidebar-signout:focus-visible {
+    background: var(--ps-color-3);
+  }
+
+  .sidebar-signout:focus-visible {
+    outline: 2px solid white;
+    outline-offset: 2px;
+  }
+
+  .sidebar.collapsed .sidebar-account {
+    padding-inline: 0;
+  }
+
+  .sidebar.collapsed .sidebar-account-profile {
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    padding-inline: 0;
+  }
+
+  .sidebar.collapsed .sidebar-signout {
+    margin-left: 0;
+  }

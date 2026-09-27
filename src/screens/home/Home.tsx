@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import AppLayout from '../../layouts/app-layout/AppLayout';
-import DriveStatsPanel from '../../components/drive-stat-panel/DriveStatPanel';
 import { Alert, Button, Card, Empty, Flex, Skeleton, Typography } from 'antd';
 import { ClockCircleOutlined, FolderOpenOutlined, ReloadOutlined, StarFilled } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
@@ -61,7 +60,6 @@ const Home: React.FC = () => {
           </Empty>)}
         </Card>
       </div>
-      <div style={{ marginTop: 24 }}><DriveStatsPanel /></div>
     </AppLayout>
   );
 };

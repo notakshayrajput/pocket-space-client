@@ -1,15 +1,15 @@
-import { Flex } from "antd";
-import { FolderOutlined, MenuOutlined, ProductOutlined, SettingOutlined, KeyOutlined, DeleteOutlined } from "@ant-design/icons";
+import { Avatar, Flex } from "antd";
+import { FolderOutlined, MenuOutlined, ProductOutlined, SettingOutlined, KeyOutlined, DeleteOutlined, LogoutOutlined, UserOutlined, DatabaseOutlined } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import React, { useEffect, useState } from "react";
-import "./Sidebar.css"; // Make sure this CSS file exists
+import "./Sidebar.css";
 import BrandLogo from "../../icons/BrandLogo";
 import { useAuth } from "../../../auth/auth-context";
 
 const LOCAL_STORAGE_KEY = "pocketspace.sidebar-collapsed";
 
 const Sidebar: React.FC = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState( localStorage.getItem(LOCAL_STORAGE_KEY) === "true" || false);
 
   // On initial load: read from localStorage
@@ -27,6 +27,7 @@ const Sidebar: React.FC = () => {
   };
   return (
     <Flex className={`sidebar ${collapsed ? "collapsed" : ""}`} vertical>
+      <div className="sidebar-navigation">
         <Link to="/" className="sidebar-link">
       <Flex className="sidebar-brand" align="center">
           <BrandLogo style={{ fontSize: 28 }} />
@@ -50,6 +51,11 @@ const Sidebar: React.FC = () => {
           {!collapsed && <span className="sidebar-text">Files</span>}
       </Flex>
         </Link>
+      <Link to="/storage" className="sidebar-link" aria-label="Storage Info">
+        <Flex className="sidebar-item"><DatabaseOutlined className="sidebar-icon" />
+          {!collapsed && <span className="sidebar-text">Storage Info</span>}
+        </Flex>
+      </Link>
       <Link to="/trash" className="sidebar-link" aria-label="Trash">
         <Flex className="sidebar-item"><DeleteOutlined className="sidebar-icon" />
           {!collapsed && <span className="sidebar-text">Trash</span>}
@@ -65,11 +71,28 @@ const Sidebar: React.FC = () => {
           {!collapsed && <span className="sidebar-text">Password resets</span>}
         </Flex>
       </Link>}
+      {user?.roles.includes("Admin") && <Link to="/admin/quotas" className="sidebar-link" aria-label="User quotas">
+        <Flex className="sidebar-item"><DatabaseOutlined className="sidebar-icon" />
+          {!collapsed && <span className="sidebar-text">User quotas</span>}
+        </Flex>
+      </Link>}
       {user?.roles.includes("Admin") && <Link to="/admin/users" className="sidebar-link">
         <Flex className="sidebar-item"><ProductOutlined className="sidebar-icon" />
           {!collapsed && <span className="sidebar-text">Approvals</span>}
         </Flex>
       </Link>}
+      </div>
+      <div className="sidebar-account">
+        <div className="sidebar-account-profile">
+          <span className="sidebar-avatar-wrap" title={collapsed ? user?.username : undefined}>
+            <Avatar className="sidebar-avatar" size={36} icon={<UserOutlined />} />
+          </span>
+          {!collapsed && <span className="sidebar-account-name" title={user?.username}>{user?.username}</span>}
+          <button className="sidebar-signout" type="button" onClick={logout} title="Sign out" aria-label="Sign out">
+            <LogoutOutlined aria-hidden="true" />
+          </button>
+        </div>
+      </div>
     </Flex>
   );
 };

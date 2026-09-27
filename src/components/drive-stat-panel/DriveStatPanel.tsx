@@ -18,13 +18,12 @@ const DriveStatsPanel: React.FC = () => {
       try {
         const data = await SpaceService.getDriveStats();
         setStats(data);
-      } catch (err: any) {
-        setError(err.message || "Failed to fetch drive stats.");
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to fetch drive stats.");
       } finally {
         setLoading(false);
       }
     };
-    console.log("Fetching drive stats...", status);
     if (!stats || status === "Connected") {
       setError(null);
       fetchStats();
@@ -34,7 +33,7 @@ const DriveStatsPanel: React.FC = () => {
   if (error) return <Alert type="error" message={error} />;
 
   const skeletonContent = (
-    <Descriptions title="Drive Info" bordered column={1} size="small">
+    <Descriptions bordered column={1} size="small">
       {[
         "Directory",
         "Total Space",
@@ -52,7 +51,6 @@ const DriveStatsPanel: React.FC = () => {
   const loadedContent = stats && (
     <>
       <Descriptions
-        title="Drive Info"
         bordered
         column={1}
         size="small"
@@ -129,7 +127,7 @@ const DriveStatsPanel: React.FC = () => {
   );
 
   return (
-    <Card title="Home" style={{ width: 400 }}>
+    <Card title="Drive info" style={{ width: "100%", maxWidth: 640 }}>
       {loading ? skeletonContent : loadedContent}
     </Card>
   );

@@ -9,3 +9,12 @@
   .ps-breadcrumb-link{
     cursor: pointer;
   }
+
+  .layout .panel {
+    min-width: 0;
+  }
+
+  .layout .footer {
+    margin-top: auto;
+    padding-top: 12px;
+  }

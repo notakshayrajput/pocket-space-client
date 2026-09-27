@@ -3,12 +3,25 @@ export interface DriveStats {
   availableSpace: number;
   totalSpace: number;
   occupiedSpace: number;
+  quotaBytes: number;
 }
 export interface FolderInfo {
   name: string;
   lastModified: string;
   relativePath: string;
   files: FileSystemEntry[];
+  totalCount: number;
+  nextOffset: number;
+  hasMore: boolean;
+}
+export type FileSortField = "name" | "size" | "lastModified" | "createdAt";
+export type FileSortDirection = "asc" | "desc";
+export interface FolderPageRequest {
+  relativePath: string;
+  search: string;
+  sortBy: FileSortField;
+  direction: FileSortDirection;
+  offset: number;
 }
 export interface FileSystemEntry{
   id: string;
