@@ -38,8 +38,8 @@ const FileExplorerItem: React.FC<{
     try {
       await FileService.setFavorite(item.id, !item.isFavorite);
       onChanged();
-    } catch (failure) {
-      notification.error({ message: failure instanceof Error ? failure.message : "Could not update favorite." });
+    } catch {
+      // The request layer displays the failure.
     } finally { setFavoriting(false); }
   };
   const rename = async () => {
@@ -48,8 +48,8 @@ const FileExplorerItem: React.FC<{
       await HttpService.getInstance().post<void>("/space/rename", { path: item.relativePath, name });
       setRenaming(false);
       onChanged();
-    } catch (failure) {
-      notification.error({ message: failure instanceof Error ? failure.message : "Rename failed." });
+    } catch {
+      // The request layer displays the failure.
     } finally { setSaving(false); }
   };
   const remove = () => modal.confirm({
@@ -57,14 +57,8 @@ const FileExplorerItem: React.FC<{
     content: item.isFolder ? "This folder and its contents will be kept in Trash for seven days. You can restore them before they are automatically deleted." : "This file will be kept in Trash for seven days. You can restore it before it is automatically deleted.",
     okText: "Move to Trash", okButtonProps: { danger: true },
     onOk: async () => {
-      try {
-        await HttpService.getInstance().delete<void>(`/space/entry?path=${encodeURIComponent(item.relativePath)}`);
-        notification.success({ message: "Moved to Trash", description: "You have seven days to restore this item." });
-        onChanged();
-      } catch (failure) {
-        notification.error({ message: failure instanceof Error ? failure.message : "Could not move to Trash." });
-        throw failure;
-      }
+      await HttpService.getInstance().delete<void>(`/space/entry?path=${encodeURIComponent(item.relativePath)}`);
+      onChanged();
     },
   });
   const [downloading, setDownloading] = useState(false);
@@ -109,20 +103,11 @@ const FileExplorerItem: React.FC<{
       notification.success({
         key,
         message: "Download started!",
-        description: (
-          <>
-            <strong>{item.name}</strong> is on its way.
-          </>
-        ),
         duration: 3,
       });
     } catch (error) {
       console.error("Download error:", error);
-      notification.error({
-        key,
-        message: "Download Failed",
-        description: "There was an error while downloading.",
-      });
+      notification.destroy(key);
     } finally {
       setDownloading(false);
     }

@@ -58,20 +58,11 @@ const FolderItem: React.FC<{
     notification.success({
       key,
       message: "Download started!",
-      description: (
-        <>
-          <strong>{item.name}</strong> is on its way.
-        </>
-      ),
       duration: 3,
     });
   } catch (error) {
     console.error("Download error:", error);
-    notification.error({
-      key,
-      message: "Download Failed",
-      description: "There was an error while downloading.",
-    });
+    notification.destroy(key);
   } finally {
     setDownloading(false);
   }

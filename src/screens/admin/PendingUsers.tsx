@@ -1,5 +1,6 @@
+/* eslint react/react-in-jsx-scope: off */
 import { useCallback, useEffect, useState } from "react";
-import { Alert, App, Button, Flex, Table, Typography } from "antd";
+import { Alert, Button, Flex, Table, Typography } from "antd";
 import { Navigate } from "react-router-dom";
 import AppLayout from "../../layouts/app-layout/AppLayout";
 import { useAuth } from "../../auth/auth-context";
@@ -14,7 +15,6 @@ export default function PendingUsers() {
   const [loading, setLoading] = useState(false);
   const [approving, setApproving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { message } = App.useApp();
   const load = useCallback(async () => {
     if (!isAdmin) return;
     setLoading(true);
@@ -30,9 +30,8 @@ export default function PendingUsers() {
     setApproving(account.id);
     try {
       await HttpService.getInstance().post<void>(`/admin/users/${account.id}/approve`, {});
-      message.success(`${account.username} is approved. Their files will be kept.`);
       await load();
-    } catch (failure) { message.error(failure instanceof Error ? failure.message : "Approval failed."); }
+    } catch { /* The request layer displays the failure. */ }
     finally { setApproving(null); }
   };
 

@@ -44,19 +44,11 @@ const UploadArea: React.FC<{ onUploaded: () => void }> = ({ onUploaded }) => {
 
     setUploading(true);
     try {
-      console.log("Uploading files:", selectedFiles, "to path:", destinationPath);
-      const response = await UploadService.uploadFiles(selectedFiles, destinationPath);
-      if (response.ok) {
-        message.success("Files uploaded successfully.");
-        setSelectedFiles([]);
-        onUploaded();
-      } else {
-        const text = await response.text();
-        message.error(`Upload failed: ${text}`);
-      }
-    } catch (err) {
-      console.error(err);
-      message.error(err instanceof Error ? err.message : "An error occurred during upload.");
+      await UploadService.uploadFiles(selectedFiles, destinationPath);
+      setSelectedFiles([]);
+      onUploaded();
+    } catch {
+      // The request layer shows the server error until the user dismisses it.
     } finally {
       setUploading(false);
     }

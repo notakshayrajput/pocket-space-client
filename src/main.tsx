@@ -8,6 +8,7 @@ import { ConfigProvider, App as AntdApp } from 'antd';
 import theme from './themes'; 
 import { store } from './store/store';
 import { Provider } from 'react-redux';
+import RequestNotificationBridge from './components/RequestNotificationBridge';
 
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -19,9 +20,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         prefixCls="ps"
         theme={theme} 
       >
-        <AntdApp notification={{stack:{ threshold: 3 }}}> 
-          
-          <App />
+        <AntdApp notification={{ stack: false }}>
+          <RequestNotificationBridge><App /></RequestNotificationBridge>
         </AntdApp>
       </ConfigProvider>
     </Provider>

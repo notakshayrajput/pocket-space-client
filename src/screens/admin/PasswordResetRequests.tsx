@@ -1,5 +1,6 @@
+/* eslint react/react-in-jsx-scope: off */
 import { useCallback, useEffect, useState } from "react";
-import { Alert, App, Button, Flex, Form, Modal, Table, Typography } from "antd";
+import { Alert, Button, Flex, Form, Modal, Table, Typography } from "antd";
 import { Navigate } from "react-router-dom";
 import AppLayout from "../../layouts/app-layout/AppLayout";
 import PasswordFields from "../../components/password-fields/PasswordFields";
@@ -18,7 +19,6 @@ export default function PasswordResetRequests() {
   const [error, setError] = useState<string | null>(null);
   const [resetError, setResetError] = useState<string | null>(null);
   const [form] = Form.useForm();
-  const { message } = App.useApp();
   const load = useCallback(async () => {
     if (!isAdmin) return;
     setLoading(true);
@@ -36,7 +36,6 @@ export default function PasswordResetRequests() {
     setResetError(null);
     try {
       await HttpService.getInstance().post<void>(`/admin/users/${selected.id}/reset-password`, { newPassword });
-      message.success(`Password reset for ${selected.username}. Share the password directly and ask them to change it in Settings.`, 8);
       form.resetFields();
       setSelected(null);
       if (selected.id === user?.id) { logout(); return; }
