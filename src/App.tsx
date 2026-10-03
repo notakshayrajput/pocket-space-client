@@ -13,11 +13,13 @@ import Home from "./screens/home/Home";
 import FilesScreen from "./screens/files-screen/FilesScreen";
 import Trash from "./screens/trash/Trash";
 import StorageInfo from "./screens/storage-info/StorageInfo";
+import TransferPanel from "./components/transfer-panel/TransferPanel";
 
 
 function App() {
   return (
     <AuthProvider>
+      <TransferPanel />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />

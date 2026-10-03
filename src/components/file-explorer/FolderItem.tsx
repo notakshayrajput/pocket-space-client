@@ -1,9 +1,9 @@
-import React, { useState } from "react";
-import { DownloadOutlined, FolderOutlined, LoadingOutlined, MoreOutlined } from "@ant-design/icons";
+import React from "react";
+import { DownloadOutlined, FolderOutlined, MoreOutlined } from "@ant-design/icons";
 import { App, Dropdown, Tooltip, type MenuProps } from "antd";
 import type { FileSystemEntry } from "../../types";
 import { useNavigate } from "react-router-dom";
-import { downloadFile } from "../../services/util";
+import { transferManager } from "../../services/transfer-manager";
 
 const FolderItem: React.FC<{
   item: FileSystemEntry;
@@ -22,55 +22,27 @@ const FolderItem: React.FC<{
     }
   };
   
-  const [downloading, setDownloading] = useState(false);
   const menuItems: MenuProps["items"] = [
     {
       key: "download",
-      label: downloading ? "Preparing" : "Download",
+      label: "Download",
       onClick: () => handleDownload(),
-      className: `download-item ${downloading ? "downloading" : ""}`,
-      icon: downloading ? <LoadingOutlined  className="loading-icon"/> : <DownloadOutlined />,
+      icon: <DownloadOutlined />,
     },
   ];
   const {notification} = App.useApp();
 
-  const handleDownload = async () => {
-  const filePath = item.relativePath;
-  setDownloading(true);
-
-  const key = `download-${filePath}`;
-  notification.open({
-    key,
-    message: "Serving it right up...",
-    description: (
-      <>
-        Getting <strong>{item.name}</strong> ready for you.
-      </>
-    ),
-    icon: <LoadingOutlined />,
-    duration: 0,
-  });
-
-  try {
-    await downloadFile([filePath]);
-
-    // Update notification to show "Download started" and auto-close in 3s
-    notification.success({
-      key,
-      message: "Download started!",
-      duration: 3,
-    });
-  } catch (error) {
-    console.error("Download error:", error);
-    notification.destroy(key);
-  } finally {
-    setDownloading(false);
-  }
-};
+  const handleDownload = () => {
+    try {
+      transferManager.enqueueDownload([item.relativePath], `${item.name}.zip`);
+    } catch (error) {
+      notification.error({ message: "Could not start download", description: error instanceof Error ? error.message : "Please try again." });
+    }
+  };
   return (
     <div
       key={item.relativePath}
-      className={`file-item  ${downloading ? "downloading" : ""} folder ${viewMode === "grid" ? "grid-item" : "list-item"}`}
+      className={`file-item folder ${viewMode === "grid" ? "grid-item" : "list-item"}`}
         
       onDoubleClick={handleDoubleClick}
       onClick={handleClick}

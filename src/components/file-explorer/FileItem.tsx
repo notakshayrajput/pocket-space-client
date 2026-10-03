@@ -1,69 +1,40 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   DownloadOutlined,
   FileOutlined,
-  LoadingOutlined,
   MoreOutlined,
 } from "@ant-design/icons";
 import { Dropdown, App, Tooltip, type MenuProps } from "antd";
 import type { FileSystemEntry } from "../../types";
-import { downloadFile } from "../../services/util";
+import { transferManager } from "../../services/transfer-manager";
 
 const FileItem: React.FC<{
   item: FileSystemEntry;
   viewMode: "grid" | "list";
 }> = ({ item, viewMode }) => {
 
-  const [downloading, setDownloading] = useState(false);
   const menuItems: MenuProps["items"] = [
     {
       key: "download",
-      label: downloading ? "Preparing" : "Download",
+      label: "Download",
       onClick: () => handleDownload(),
-      className: `download-item ${downloading ? "downloading" : ""}`,
-      icon: downloading ? <LoadingOutlined className="loading-icon"/> : <DownloadOutlined />,
+      icon: <DownloadOutlined />,
     },
   ];
   const {notification} = App.useApp();
 
-  const handleDownload = async () => {
-  const filePath = item.relativePath;
-  setDownloading(true);
-
-  const key = `download-${filePath}`;
-  notification.open({
-    key,
-    message: "Serving it right up...",
-    description: (
-      <>
-        Getting <strong>{item.name}</strong> ready for you.
-      </>
-    ),
-    icon: <LoadingOutlined />,
-    duration: 0,
-  });
-
-  try {
-    await downloadFile([filePath]);
-
-    // Update notification to show "Download started" and auto-close in 3s
-    notification.success({
-      key,
-      message: "Download started!",
-      duration: 3,
-    });
-  } catch (error) {
-    console.error("Download error:", error);
-    notification.destroy(key);
-  } finally {
-    setDownloading(false);
-  }
-};
+  const handleDownload = () => {
+    try {
+      transferManager.enqueueDownload([item.relativePath], item.name);
+    } catch (error) {
+      notification.error({ message: "Could not start download", description: error instanceof Error ? error.message : "Please try again." });
+    }
+  };
 
   return (
     <div
       key={item.relativePath}
-      className={`file-item ${downloading ? "downloading" : ""} ${viewMode === "grid" ? "grid-item" : "list-item"}`}
+      className={`file-item ${viewMode === "grid" ? "grid-item" : "list-item"}`}
     >
       {/* Dropdown for grid mode - top right */}
       {viewMode === "grid" && (

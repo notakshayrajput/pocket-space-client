@@ -3,14 +3,13 @@ import { Flex, Button, List, message } from "antd";
 import { PlusOutlined, UploadOutlined, CloseOutlined } from "@ant-design/icons";
 import { useSearchParams } from "react-router-dom";
 import "./UploadArea.css";
-import UploadService from "../../services/upload-service";
+import { transferManager } from "../../services/transfer-manager";
 
-const UploadArea: React.FC<{ onUploaded: () => void }> = ({ onUploaded }) => {
+const UploadArea: React.FC = () => {
   const [searchParams] = useSearchParams();
   const destinationPath = searchParams.get("path") || "";
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [uploading, setUploading] = useState(false);
 
   const handleAreaClick = () => {
     fileInputRef.current?.click();
@@ -25,6 +24,7 @@ const UploadArea: React.FC<{ onUploaded: () => void }> = ({ onUploaded }) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     setSelectedFiles((prev) => [...prev, ...files]);
+    e.target.value = "";
   };
 
   const preventDefaults = (e: React.DragEvent) => {
@@ -36,21 +36,17 @@ const UploadArea: React.FC<{ onUploaded: () => void }> = ({ onUploaded }) => {
     setSelectedFiles((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
 
-  const handleUpload = async () => {
+  const handleUpload = () => {
     if (!selectedFiles.length) {
       message.warning("Please select files first.");
       return;
     }
 
-    setUploading(true);
     try {
-      await UploadService.uploadFiles(selectedFiles, destinationPath);
+      transferManager.enqueueUploads(selectedFiles, destinationPath);
       setSelectedFiles([]);
-      onUploaded();
-    } catch {
-      // The request layer shows the server error until the user dismisses it.
-    } finally {
-      setUploading(false);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "Could not start upload.");
     }
   };
 
@@ -112,7 +108,6 @@ const UploadArea: React.FC<{ onUploaded: () => void }> = ({ onUploaded }) => {
           type="primary"
           icon={<UploadOutlined />}
           disabled={!selectedFiles.length}
-          loading={uploading}
           onClick={handleUpload}
         >
           Upload

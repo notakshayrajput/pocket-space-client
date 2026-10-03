@@ -16,7 +16,4 @@ export default class FileService {
    public static deleteTrashItem(id: string): Promise<void> {
         return HttpService.getInstance().delete<void>(`/space/trash/${encodeURIComponent(id)}`);
    }
-   public static async downloadFiles(paths: string[]): Promise<Response> {
-        return await HttpService.getInstance().post<Response>("/download",{ paths },true);
-    }
 }

@@ -1,21 +1,20 @@
 import React, { useState } from "react";
 import {
   DownloadOutlined,
-  FolderOutlined,
-  FileOutlined,
-  LoadingOutlined,
   MoreOutlined,
   StarFilled,
   StarOutlined,
   DeleteOutlined,
   FolderOpenOutlined,
+  FolderOutlined,
+  FileOutlined,
 } from "@ant-design/icons";
 import { Button, Dropdown, App, Input, Modal, Tooltip, type MenuProps } from "antd";
 import HttpService from "../../services/http-service";
 import FileService from "../../services/file-service";
 import { useNavigate } from "react-router-dom";
 import type { FileSystemEntry } from "../../types";
-import { downloadFile } from "../../services/util";
+import { transferManager } from "../../services/transfer-manager";
 
 const FileExplorerItem: React.FC<{
   item: FileSystemEntry;
@@ -61,7 +60,6 @@ const FileExplorerItem: React.FC<{
       onChanged();
     },
   });
-  const [downloading, setDownloading] = useState(false);
 
   const isFolder = item.isFolder;
 
@@ -74,42 +72,14 @@ const FileExplorerItem: React.FC<{
   };
 
   const handleClick = (e: React.MouseEvent) => {
-    if (e.ctrlKey || e.metaKey) {
-      window.open(path, "_blank");
-    }
+    if (e.ctrlKey || e.metaKey) window.open(path, "_blank");
   };
 
-  const handleDownload = async () => {
-    const filePath = item.relativePath;
-    setDownloading(true);
-    const key = `download-${filePath}`;
-
-    notification.open({
-      key,
-      message: "Serving it right up...",
-      description: (
-        <>
-          Getting <strong>{item.name}</strong> ready for you.
-        </>
-      ),
-      icon: <LoadingOutlined />,
-      duration: 0,
-    });
-
+  const handleDownload = () => {
     try {
-      await downloadFile([filePath]);
-      onChanged();
-
-      notification.success({
-        key,
-        message: "Download started!",
-        duration: 3,
-      });
+      transferManager.enqueueDownload([item.relativePath], item.isFolder ? `${item.name}.zip` : item.name);
     } catch (error) {
-      console.error("Download error:", error);
-      notification.destroy(key);
-    } finally {
-      setDownloading(false);
+      notification.error({ message: "Could not start download", description: error instanceof Error ? error.message : "Please try again." });
     }
   };
 
@@ -118,14 +88,9 @@ const FileExplorerItem: React.FC<{
     [
       {
         key: "download",
-        label: downloading ? "Preparing" : "Download",
+        label: "Download",
         onClick: handleDownload,
-        className: `download-item ${downloading ? "downloading" : ""}`,
-        icon: downloading ? (
-          <LoadingOutlined className="loading-icon" />
-        ) : (
-          <DownloadOutlined />
-        ),
+        icon: <DownloadOutlined />,
       },
       { key: "rename", label: "Rename", onClick: () => { setName(item.name); setRenaming(true); } },
       ...(showLocation ? [{ key: "location", label: "Open containing folder", icon: <FolderOpenOutlined />,
@@ -138,9 +103,7 @@ const FileExplorerItem: React.FC<{
     <>
     <div
       key={item.relativePath}
-      className={`file-item ${isFolder ? "folder" : ""} ${
-        downloading ? "downloading" : ""
-      } ${viewMode === "grid" ? "grid-item" : "list-item"}`}
+      className={`file-item ${isFolder ? "folder" : ""} ${viewMode === "grid" ? "grid-item" : "list-item"}`}
       onDoubleClick={handleDoubleClick}
       onClick={(e) => {
         if (selectionMode) {
@@ -204,8 +167,8 @@ const FileExplorerItem: React.FC<{
           {showLocation && <div className="file-item-location">Last used {new Date(item.recentAt).toLocaleString()}</div>}
         </div>
 
-        {showLocation && <Button type="text" aria-label={`Download ${item.name}`} icon={<DownloadOutlined />} loading={downloading}
-          onClick={event => { event.stopPropagation(); void handleDownload(); }} />}
+        {showLocation && <Button type="text" aria-label={`Download ${item.name}`} icon={<DownloadOutlined />}
+          onClick={event => { event.stopPropagation(); handleDownload(); }} />}
 
         {viewMode === "list" && menuItems.length > 0 && (
           <Dropdown menu={{ items: menuItems }} trigger={["click"]}>
