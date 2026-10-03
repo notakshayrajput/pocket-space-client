@@ -1,13 +1,11 @@
 import { AUTH_CHANGED_EVENT, readSession } from "../../auth/auth-session.ts";
 
-export type ServerState = "Idle" | "BackingUp" | "UserTraffic" | "Cleaning";
 interface StatusSnapshot {
   status: "Connected" | "Disconnected";
-  serverState: ServerState | null;
 }
 
-const disconnected: StatusSnapshot = { status: "Disconnected", serverState: null };
-const optimistic: StatusSnapshot = { status: "Connected", serverState: null };
+const disconnected: StatusSnapshot = { status: "Disconnected" };
+const optimistic: StatusSnapshot = { status: "Connected" };
 const INITIAL_CONNECTION_GRACE_MS = 5000;
 
 export function createWebSocketStatusStore(getUrl: () => URL) {
@@ -22,7 +20,7 @@ export function createWebSocketStatusStore(getUrl: () => URL) {
   let hasConnected = false;
 
   function publish(next: StatusSnapshot) {
-    if (snapshot.status === next.status && snapshot.serverState === next.serverState) return;
+    if (snapshot.status === next.status) return;
     snapshot = next;
     listeners.forEach(listener => listener());
   }
@@ -37,7 +35,7 @@ export function createWebSocketStatusStore(getUrl: () => URL) {
     accessToken = undefined;
     hasConnected = false;
     if (previous) {
-      previous.onopen = previous.onmessage = previous.onerror = previous.onclose = null;
+      previous.onopen = previous.onerror = previous.onclose = null;
       previous.close();
     }
   }
@@ -89,14 +87,7 @@ export function createWebSocketStatusStore(getUrl: () => URL) {
       hasConnected = true;
       clearTimeout(graceTimer);
       graceTimer = undefined;
-      publish({ status: "Connected", serverState: null });
-    };
-    current.onmessage = event => {
-      if (socket !== current || typeof event.data !== "string") return;
-      const state = event.data.replace(/^server-state:/, "");
-      if (state === "Idle" || state === "BackingUp" || state === "UserTraffic" || state === "Cleaning") {
-        publish({ ...snapshot, serverState: state });
-      }
+      publish(optimistic);
     };
     // A WebSocket error is followed by close. Let close own reconnection;
     // explicitly closing here can interrupt an in-progress handshake.

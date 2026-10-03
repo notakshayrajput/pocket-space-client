@@ -1,8 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { createWebSocketStatusStore } from "./web-socket-status-store";
 
-export type { ServerState } from "./web-socket-status-store";
-
 const store = createWebSocketStatusStore(() => {
   const url = new URL(import.meta.env.VITE_API_BASE_URL || "/api", window.location.origin);
   url.protocol = url.protocol === "https:" ? "wss:" : "ws:";

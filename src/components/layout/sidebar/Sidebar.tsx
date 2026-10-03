@@ -71,9 +71,9 @@ const Sidebar: React.FC = () => {
           {!collapsed && <span className="sidebar-text">Password resets</span>}
         </Flex>
       </Link>}
-      {user?.roles.includes("Admin") && <Link to="/admin/quotas" className="sidebar-link" aria-label="User quotas" title="User quotas">
+      {user?.roles.includes("Admin") && <Link to="/admin/quotas" className="sidebar-link" aria-label="Manage users" title="Manage users">
         <Flex className="sidebar-item"><DatabaseOutlined className="sidebar-icon" />
-          {!collapsed && <span className="sidebar-text">User quotas</span>}
+          {!collapsed && <span className="sidebar-text">Manage users</span>}
         </Flex>
       </Link>}
       {user?.roles.includes("Admin") && <Link to="/admin/users" className="sidebar-link" aria-label="Approvals" title="Approvals">

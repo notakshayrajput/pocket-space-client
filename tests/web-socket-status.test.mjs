@@ -8,7 +8,6 @@ class FakeWebSocket {
   static failConstruction = false;
   closeCalls = 0;
   onopen = null;
-  onmessage = null;
   onerror = null;
   onclose = null;
 
@@ -19,7 +18,6 @@ class FakeWebSocket {
     FakeWebSocket.instances.push(this);
   }
   open() { this.onopen?.({}); }
-  message(data) { this.onmessage?.({ data }); }
   fail() {
     this.onerror?.({});
     this.onclose?.({ code: 1006 });
@@ -122,8 +120,9 @@ test("the footer and drive panel share updates and one authenticated connection"
   const socket = FakeWebSocket.instances[0];
   assert.deepEqual(socket.protocols, ["pocketspace", "bearer.test-token"]);
   socket.open();
-  socket.message("server-state:Idle");
-  assert.deepEqual(store.getSnapshot(), { status: "Connected", serverState: "Idle" });
+  assert.deepEqual(store.getSnapshot(), { status: "Connected" });
+  socket.fail();
+  assert.deepEqual(store.getSnapshot(), { status: "Disconnected" });
   assert.equal(footerUpdates, 1);
   assert.equal(driveUpdates, 1);
   stopFooter();
@@ -146,9 +145,8 @@ test("a real disconnect retries once, backs off, and recovers status", t => {
   t.mock.timers.tick(1);
   const first = FakeWebSocket.instances[0];
   first.open();
-  first.message("server-state:Idle");
   first.fail();
-  assert.deepEqual(store.getSnapshot(), { status: "Disconnected", serverState: null });
+  assert.deepEqual(store.getSnapshot(), { status: "Disconnected" });
   assert.equal(first.closeCalls, 0);
   t.mock.timers.tick(999);
   assert.equal(FakeWebSocket.instances.length, 1);
@@ -160,8 +158,7 @@ test("a real disconnect retries once, backs off, and recovers status", t => {
   t.mock.timers.tick(1);
   const third = FakeWebSocket.instances[2];
   third.open();
-  third.message("server-state:Cleaning");
-  assert.deepEqual(store.getSnapshot(), { status: "Connected", serverState: "Cleaning" });
+  assert.deepEqual(store.getSnapshot(), { status: "Connected" });
   third.fail();
   t.mock.timers.tick(1000);
   assert.equal(FakeWebSocket.instances.length, 4);
