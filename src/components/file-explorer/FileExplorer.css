@@ -25,6 +25,22 @@
 .file-explorer .file-load-more {
   height: 1px;
 }
+.virtual-file-list { width: 100%; }
+.virtual-file-row { display: flex; width: 100%; }
+.virtual-file-row-grid { height: 216px; flex-wrap: nowrap; }
+.virtual-file-row-list { height: 96px; }
+.virtual-file-row-grid .file-item.grid-item {
+  width: 200px;
+  height: 200px;
+  box-sizing: border-box;
+  flex: 0 0 200px;
+}
+.virtual-file-row-list .file-item.list-item {
+  width: 100%;
+  height: 96px;
+  margin: 0;
+  box-sizing: border-box;
+}
 .file-item {
   width: 200px;
   height: 200px;

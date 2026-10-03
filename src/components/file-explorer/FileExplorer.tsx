@@ -18,6 +18,7 @@ import HttpService from "../../services/http-service";
 import "./FileExplorer.css";
 import UploadArea from "../upload-area/UploadArea";
 import FileExplorerItem from "./FileExplorerItem";
+import VirtualFileList from "./VirtualFileList";
 import FilePreview from "./FilePreview";
 import { FileExplorerSkeleton } from "../loading/LoadingSkeletons";
 import { transferManager } from "../../services/transfer-manager";
@@ -262,9 +263,7 @@ const FileExplorer: React.FC = () => {
           <Button onClick={() => setSearchQuery("")}>Clear search</Button>
         </Empty>
       )}
-      <div className={viewMode == "grid" ? "grid" : "list"}>
-        {visibleFiles.map(renderItem)}
-      </div>
+      {!isDebouncing && <VirtualFileList items={visibleFiles} viewMode={viewMode} renderItem={renderItem} />}
       {!isDebouncing && loading && fileInfo?.hasMore &&
         <FileExplorerSkeleton viewMode={viewMode} count={viewMode === "grid" ? 4 : 2} label="Loading more files" />}
       {!isDebouncing && error && fileInfo && <Alert type="error" showIcon message={error} action={
