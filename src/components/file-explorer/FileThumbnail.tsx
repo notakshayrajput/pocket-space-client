@@ -1,13 +1,28 @@
 import { useEffect, useRef, useState } from "react";
 import { FileOutlined, FilePdfOutlined, FileTextOutlined, FolderOutlined, PictureOutlined } from "@ant-design/icons";
+import { AUTH_CHANGED_EVENT } from "../../auth/auth-session";
 import type { FileSystemEntry } from "../../types";
-import { previewKind, thumbnailAllowed, visualBlob } from "../../services/preview-service";
+import { previewKind, thumbnailAllowed } from "../../services/preview-service";
+import { cachedThumbnail, loadThumbnail, thumbnailKey } from "../../services/thumbnail-service";
 
 export default function FileThumbnail({ item }: { item: FileSystemEntry }) {
   const container = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
-  const [thumbnail, setThumbnail] = useState<string | null>(null);
+  const [thumbnail, setThumbnail] = useState<{ key: string; url: string } | null>(null);
+  const [revision, setRevision] = useState(0);
   const kind = item.isFolder ? "folder" : previewKind(item.name);
+  const key = thumbnailKey(item);
+  const image = thumbnail?.key === key ? thumbnail.url : cachedThumbnail(item);
+
+  useEffect(() => {
+    const reset = () => { setThumbnail(null); setRevision(value => value + 1); };
+    window.addEventListener(AUTH_CHANGED_EVENT, reset);
+    window.addEventListener("pocketspace:upload-complete", reset);
+    return () => {
+      window.removeEventListener(AUTH_CHANGED_EVENT, reset);
+      window.removeEventListener("pocketspace:upload-complete", reset);
+    };
+  }, []);
 
   useEffect(() => {
     if (!thumbnailAllowed(item)) return;
@@ -23,26 +38,17 @@ export default function FileThumbnail({ item }: { item: FileSystemEntry }) {
   useEffect(() => {
     if (!visible || !thumbnailAllowed(item)) return;
     let active = true;
-    let objectUrl: string | undefined;
-    visualBlob(item).then(async blob => {
-      if (!active) return;
-      if (kind === "image") {
-        objectUrl = URL.createObjectURL(blob);
-        setThumbnail(objectUrl);
-      } else if (kind === "pdf") {
-        const { pdfThumbnail } = await import("../../services/pdf-thumbnail");
-        const image = await pdfThumbnail(blob);
-        if (active) setThumbnail(image);
-      }
+    loadThumbnail(item).then(url => {
+      if (active) setThumbnail({ key, url });
     }).catch(() => { /* Keep the file-type icon when a thumbnail cannot be rendered. */ });
-    return () => { active = false; if (objectUrl) URL.revokeObjectURL(objectUrl); };
-  }, [visible, item.name, item.relativePath, item.size, item.lastModified, kind]);
+    return () => { active = false; };
+  }, [visible, item.name, item.relativePath, item.size, item.lastModified, key, revision]);
 
   const icon = kind === "folder" ? <FolderOutlined /> : kind === "pdf" ? <FilePdfOutlined />
     : kind === "image" ? <PictureOutlined />
       : kind === "text" || kind === "rtf" || kind === "docx" ? <FileTextOutlined /> : <FileOutlined />;
   const label = kind === "folder" ? "Folder" : item.name.includes(".") ? item.name.split(".").pop()?.toUpperCase() : "FILE";
-  return <div ref={container} data-kind={kind} className={`file-thumbnail ${thumbnail ? "has-image" : ""}`} aria-hidden="true">
-    {thumbnail ? <img src={thumbnail} alt="" loading="lazy" /> : <>{icon}<span>{label}</span></>}
+  return <div ref={container} data-kind={kind} className={`file-thumbnail ${image ? "has-image" : ""}`} aria-hidden="true">
+    {image ? <img src={image} alt="" loading="lazy" /> : <>{icon}<span>{label}</span></>}
   </div>;
 }
