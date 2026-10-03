@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Button, Card, Empty, Flex, List, Popconfirm, Skeleton, Typography } from 'antd';
+import { Alert, Button, Card, Empty, Flex, List, Popconfirm, Typography } from 'antd';
 import { DeleteOutlined, FileOutlined, FolderOutlined, ReloadOutlined, UndoOutlined } from '@ant-design/icons';
 import { useDispatch } from 'react-redux';
 import AppLayout from '../../layouts/app-layout/AppLayout';
 import FileService from '../../services/file-service';
+import { ListSkeleton } from '../../components/loading/LoadingSkeletons';
 import { formatBytes } from '../../services/util';
 import { clearFileCache } from '../../store/features/fileExplorer/fileExplorerSlice';
 import type { TrashEntry } from '../../types';
@@ -60,14 +61,14 @@ const Trash: React.FC = () => {
   return <AppLayout>
     <Flex justify="space-between" align="center" gap={12} wrap style={{ marginBottom: 20 }}>
       <Typography.Title level={2} style={{ margin: 0 }}><DeleteOutlined /> Trash</Typography.Title>
-      <Button icon={<ReloadOutlined />} onClick={refresh} loading={loading}>Refresh</Button>
+      <Button icon={<ReloadOutlined />} onClick={refresh} disabled={loading}>Refresh</Button>
     </Flex>
     <Alert type="info" showIcon message="Items in Trash are automatically deleted after seven days."
       description="Restore an item before its deletion date, or permanently delete it now to free storage. Permanent deletion cannot be undone."
       style={{ marginBottom: 20 }} />
     {error && <Alert type="error" showIcon message={error} style={{ marginBottom: 16 }} action={<Button onClick={refresh}>Try again</Button>} />}
     <Card>
-      {loading ? <Skeleton active /> : !error && <List dataSource={items}
+      {loading ? <ListSkeleton label="Loading Trash" /> : !error && <List dataSource={items}
         locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Trash is empty" /> }}
         renderItem={item => {
           const expired = Date.parse(item.expiresAt) <= now;

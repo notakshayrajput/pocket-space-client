@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Alert, Button, Flex, Table, Typography } from "antd";
 import { Navigate } from "react-router-dom";
 import AppLayout from "../../layouts/app-layout/AppLayout";
+import { TableSkeleton } from "../../components/loading/LoadingSkeletons";
 import { useAuth } from "../../auth/auth-context";
 import HttpService from "../../services/http-service";
 
@@ -12,7 +13,7 @@ export default function PendingUsers() {
   const { user } = useAuth();
   const isAdmin = user?.roles.includes("Admin");
   const [users, setUsers] = useState<PendingUser[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [approving, setApproving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const load = useCallback(async () => {
@@ -38,16 +39,16 @@ export default function PendingUsers() {
   return <AppLayout>
     <Flex justify="space-between" align="center" gap={12}>
       <Typography.Title level={2}>Account approvals</Typography.Title>
-      <Button onClick={() => void load()} loading={loading}>Refresh</Button>
+      <Button onClick={() => void load()} disabled={loading}>Refresh</Button>
     </Flex>
     <Typography.Paragraph type="secondary">Approve accounts before their deadline to keep their access and files. Unapproved accounts are automatically deleted after 7 days.</Typography.Paragraph>
     {error && <Alert type="error" message={error} showIcon />}
-    <Table rowKey="id" dataSource={users} loading={loading} scroll={{ x: 650 }} locale={{ emptyText: "No accounts are waiting for approval." }} columns={[
+    {loading ? <TableSkeleton columns={4} label="Loading account approvals" /> : <Table rowKey="id" dataSource={users} scroll={{ x: 650 }} locale={{ emptyText: "No accounts are waiting for approval." }} columns={[
       { title: "Username", dataIndex: "username" },
       { title: "Signed up", dataIndex: "createdAt", render: (value: string) => new Date(value).toLocaleString() },
       { title: "Deletion deadline", dataIndex: "pendingExpiresAt", render: (value: string) => new Date(value).toLocaleString() },
       { title: "Action", key: "action", render: (_, account) => <Button type="primary" disabled={approving !== null && approving !== account.id}
         loading={approving === account.id} onClick={() => void approve(account)}>Approve</Button> },
-    ]} />
+    ]} />}
   </AppLayout>;
 }

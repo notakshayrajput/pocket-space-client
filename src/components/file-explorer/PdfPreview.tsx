@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Button, Flex, Spin } from "antd";
+import { Alert, Button, Flex } from "antd";
+import { PreviewSkeleton } from "../loading/LoadingSkeletons";
 import * as pdfjs from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
@@ -79,7 +80,7 @@ export default function PdfPreview({ blob }: { blob: Blob }) {
       <span>Page {pageNumber} of {document.numPages}</span>
       <Button size="small" disabled={pageNumber === document.numPages} onClick={() => setPageNumber(value => value + 1)}>Next</Button>
     </Flex>}
-    {(!document || rendering) && !error && <div className="file-preview-loading"><Spin aria-label="Rendering PDF" /></div>}
+    {(!document || rendering) && !error && <PreviewSkeleton kind="pdf" label="Rendering PDF" />}
     <canvas ref={canvas} className="file-preview-pdf-canvas" style={{ display: rendering ? "none" : "block" }} />
   </div>;
 }

@@ -25,11 +25,6 @@
 .file-explorer .file-load-more {
   height: 1px;
 }
-.file-explorer .file-loading-more {
-  display: flex;
-  justify-content: center;
-  padding: 16px;
-}
 .file-item {
   width: 200px;
   height: 200px;
@@ -174,7 +169,6 @@ vertical-align: top
 .list-item .file-thumbnail { width: 56px; height: 56px; }
 .list-item .file-thumbnail > .anticon { font-size: 27px; }
 .list-item .file-thumbnail span:last-child:not(.anticon) { font-size: 8px; }
-.file-preview-loading { min-height: 220px; display: flex; align-items: center; justify-content: center; }
 .file-preview-image { display: block; max-width: 100%; max-height: 75vh; margin: 0 auto; object-fit: contain; }
 .file-preview-pdf-viewer { min-height: 320px; width: 100%; }
 .file-preview-pdf-controls { margin-bottom: 12px; }

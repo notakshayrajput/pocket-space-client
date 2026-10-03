@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { Alert, Spin } from "antd";
+import { Alert } from "antd";
+import { PreviewSkeleton } from "../loading/LoadingSkeletons";
 import type { PreviewFile } from "../../services/preview-service";
 import { previewKind, previewText, visualBlob } from "../../services/preview-service";
 import { rtfToText } from "../../services/rtf-to-text";
@@ -46,13 +47,13 @@ export default function FilePreview({ file }: { file: PreviewFile }) {
     return () => { active = false; controller.abort(); if (objectUrl) URL.revokeObjectURL(objectUrl); };
   }, [file.name, file.relativePath, file.size, file.lastModified, kind]);
 
-  if (state.status === "loading") return <div className="file-preview-loading"><Spin aria-label="Loading preview" /></div>;
+  if (state.status === "loading") return <PreviewSkeleton kind={kind === "image" || kind === "pdf" ? kind : "text"} />;
   if (state.status === "error") return <Alert type="info" message={state.message} showIcon />;
   if (state.status === "text") return <div className="file-preview-text-wrap">
     <pre className="file-preview-text">{state.value || "This file is empty."}</pre>
     {state.truncated && <Alert type="info" message="Showing the first part of this file." />}
   </div>;
-  if (state.status === "pdf") return <Suspense fallback={<div className="file-preview-loading"><Spin /></div>}>
+  if (state.status === "pdf") return <Suspense fallback={<PreviewSkeleton kind="pdf" label="Loading PDF preview" />}>
     <PdfPreview blob={state.blob} />
   </Suspense>;
   return <img className="file-preview-image" src={state.url} alt={file.name} />;

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import AppLayout from '../../layouts/app-layout/AppLayout';
-import { Alert, Button, Card, Empty, Flex, Skeleton, Typography } from 'antd';
+import { Alert, Button, Card, Empty, Flex, Typography } from 'antd';
 import { ClockCircleOutlined, FolderOpenOutlined, ReloadOutlined, StarFilled } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import FileExplorerItem from '../../components/file-explorer/FileExplorerItem';
+import { FileExplorerSkeleton } from '../../components/loading/LoadingSkeletons';
 import FileService from '../../services/file-service';
 import { clearFileCache } from '../../store/features/fileExplorer/fileExplorerSlice';
 import type { HomeFiles } from '../../types';
@@ -38,7 +39,7 @@ const Home: React.FC = () => {
           <Typography.Text type="secondary">Your favorites and the files you used recently, all in one place.</Typography.Text>
         </div>
         <Flex gap={8}>
-          <Button icon={<ReloadOutlined />} onClick={refresh} loading={loading}>Refresh</Button>
+          <Button icon={<ReloadOutlined />} onClick={refresh} disabled={loading}>Refresh</Button>
           <Link to="/files"><Button type="primary" icon={<FolderOpenOutlined />}>Browse files</Button></Link>
         </Flex>
       </Flex>
@@ -47,13 +48,13 @@ const Home: React.FC = () => {
       <div className="home-collections">
         <Card title={<><StarFilled style={{ color: '#ad6800', marginRight: 8 }} />Favorites</>}>
           <Typography.Paragraph type="secondary">Star a file in Files to keep it close.</Typography.Paragraph>
-          {loading ? <Skeleton active /> : !error && (files.favorites.length ? <div className="home-file-list">
+          {loading ? <FileExplorerSkeleton viewMode="list" count={3} label="Loading favorites" /> : !error && (files.favorites.length ? <div className="home-file-list">
             {files.favorites.map(item => <FileExplorerItem key={item.id} item={item} viewMode="list" showLocation onChanged={refresh} />)}
           </div> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No favorites yet" />)}
         </Card>
         <Card title={<><ClockCircleOutlined style={{ marginRight: 8 }} />Recent files</>}>
           <Typography.Paragraph type="secondary">Your 20 most recent uploads, downloads, renames, and restores.</Typography.Paragraph>
-          {loading ? <Skeleton active /> : !error && (files.recent.length ? <div className="home-file-list">
+          {loading ? <FileExplorerSkeleton viewMode="list" count={4} label="Loading recent files" /> : !error && (files.recent.length ? <div className="home-file-list">
             {files.recent.map(item => <FileExplorerItem key={item.id} item={item} viewMode="list" showLocation onChanged={refresh} />)}
           </div> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Upload a file to get started">
             <Link to="/files"><Button>Go to Files</Button></Link>

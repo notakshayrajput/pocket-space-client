@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Alert, Button, Flex, InputNumber, Modal, Table, Typography } from "antd";
 import { Navigate } from "react-router-dom";
 import AppLayout from "../../layouts/app-layout/AppLayout";
+import { TableSkeleton } from "../../components/loading/LoadingSkeletons";
 import { useAuth } from "../../auth/auth-context";
 import HttpService from "../../services/http-service";
 import { formatBytes } from "../../services/util";
@@ -47,11 +48,11 @@ export default function UserQuotas() {
   return <AppLayout>
     <Flex justify="space-between" align="center" gap={12}>
       <Typography.Title level={2}>User quotas</Typography.Title>
-      <Button onClick={() => void load()} loading={loading}>Refresh</Button>
+      <Button onClick={() => void load()} disabled={loading}>Refresh</Button>
     </Flex>
     <Typography.Paragraph type="secondary">Every account starts with 500 MB. Increase a quota when a user needs more space.</Typography.Paragraph>
     {error && <Alert type="error" showIcon message={error} />}
-    <Table rowKey="id" dataSource={accounts} loading={loading} scroll={{ x: 650 }} columns={[
+    {loading ? <TableSkeleton columns={4} label="Loading user quotas" /> : <Table rowKey="id" dataSource={accounts} scroll={{ x: 650 }} columns={[
       { title: "Username", dataIndex: "username" },
       { title: "Status", dataIndex: "status" },
       { title: "Quota", dataIndex: "quotaBytes", render: (value: number) => formatBytes(value) },
@@ -59,7 +60,7 @@ export default function UserQuotas() {
         disabled={account.quotaBytes >= MAX_QUOTA_MB * MB} onClick={() => {
         setSelected(account); setQuotaMb(Math.min(MAX_QUOTA_MB, account.quotaBytes / MB + 100)); setSaveError(null);
       }}>Increase quota</Button> },
-    ]} />
+    ]} />}
     <Modal title={`Increase quota for ${selected?.username ?? "user"}`} open={selected !== null}
       onCancel={() => setSelected(null)} onOk={() => void save()} confirmLoading={saving}
       okButtonProps={{ disabled: quotaMb === null || quotaMb <= (selected?.quotaBytes ?? 0) / MB }}>

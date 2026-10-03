@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Alert, Button, Card, Checkbox, Descriptions, Form, Input, InputNumber, Space, Typography } from "antd";
+import { Alert, Button, Card, Checkbox, Descriptions, Form, Input, InputNumber, Skeleton, Space, Typography } from "antd";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "../../layouts/app-layout/AppLayout";
 import PasswordFields from "../../components/password-fields/PasswordFields";
@@ -67,6 +67,7 @@ export default function Settings() {
     {user?.roles.includes("Admin") && <Card title="File storage" style={{ maxWidth: 640, marginBottom: 24 }}>
       {storageError && <Alert style={{ marginBottom: 16 }} type="error" showIcon message={storageError} role="alert" />}
       {storageSaved && <Alert style={{ marginBottom: 16 }} type="success" showIcon message="Storage limit saved." />}
+      {!storageSettings && !storageError && <Skeleton active paragraph={{ rows: 3 }} />}
       {storageSettings && <Space direction="vertical" size={16} style={{ width: "100%" }}>
         <Descriptions column={1} size="small">
           <Descriptions.Item label="Provider">{storageSettings.backend === "S3" ? "AWS S3" : "File system"}</Descriptions.Item>

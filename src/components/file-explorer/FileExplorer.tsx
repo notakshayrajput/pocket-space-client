@@ -13,12 +13,13 @@ import {
 } from "@ant-design/icons";
 import { useSelector, useDispatch } from "react-redux";
 import type { FileSortDirection, FileSortField, FileSystemEntry } from "../../types";
-import { Alert, Button, Drawer, Empty, Input, Modal, Segmented, Select, App, Flex, Spin } from "antd";
+import { Alert, Button, Drawer, Empty, Input, Modal, Segmented, Select, App, Flex } from "antd";
 import HttpService from "../../services/http-service";
 import "./FileExplorer.css";
 import UploadArea from "../upload-area/UploadArea";
 import FileExplorerItem from "./FileExplorerItem";
 import FilePreview from "./FilePreview";
+import { FileExplorerSkeleton } from "../loading/LoadingSkeletons";
 import { transferManager } from "../../services/transfer-manager";
 import { openPreviewTab, previewRoute } from "../../services/preview-service";
 import { clearFileCache, fetchFolderPage, folderQueryKey } from "../../store/features/fileExplorer/fileExplorerSlice";
@@ -253,7 +254,7 @@ const FileExplorer: React.FC = () => {
       {!isDebouncing && error && !fileInfo && <Alert type="error" showIcon message={error} action={
         <Button onClick={() => void dispatch(fetchFolderPage({ ...query, offset: 0 }))}>Retry</Button>
       } />}
-      {(isDebouncing || (!fileInfo && !error)) && <Spin aria-label="Loading files" />}
+      {(isDebouncing || (!fileInfo && !error)) && <FileExplorerSkeleton viewMode={viewMode} />}
       {!isDebouncing && !loading && !error && fileInfo?.totalCount === 0 && !activeSearch &&
         <Empty description="Your folder is empty. Upload a file to get started." />}
       {!isDebouncing && !loading && !error && fileInfo?.totalCount === 0 && !!activeSearch && (
@@ -264,7 +265,8 @@ const FileExplorer: React.FC = () => {
       <div className={viewMode == "grid" ? "grid" : "list"}>
         {visibleFiles.map(renderItem)}
       </div>
-      {!isDebouncing && loading && fileInfo && <div className="file-loading-more"><Spin aria-label="Loading more files" /></div>}
+      {!isDebouncing && loading && fileInfo?.hasMore &&
+        <FileExplorerSkeleton viewMode={viewMode} count={viewMode === "grid" ? 4 : 2} label="Loading more files" />}
       {!isDebouncing && error && fileInfo && <Alert type="error" showIcon message={error} action={
         <Button onClick={() => void dispatch(fetchFolderPage({ ...query, offset: fileInfo.nextOffset }))}>Retry</Button>
       } />}

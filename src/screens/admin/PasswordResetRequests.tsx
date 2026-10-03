@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Alert, Button, Flex, Form, Modal, Table, Typography } from "antd";
 import { Navigate } from "react-router-dom";
 import AppLayout from "../../layouts/app-layout/AppLayout";
+import { TableSkeleton } from "../../components/loading/LoadingSkeletons";
 import PasswordFields from "../../components/password-fields/PasswordFields";
 import { useAuth } from "../../auth/auth-context";
 import HttpService from "../../services/http-service";
@@ -13,7 +14,7 @@ export default function PasswordResetRequests() {
   const { user, logout } = useAuth();
   const isAdmin = user?.roles.includes("Admin");
   const [requests, setRequests] = useState<ResetRequest[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<ResetRequest | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,15 +48,15 @@ export default function PasswordResetRequests() {
   return <AppLayout>
     <Flex justify="space-between" align="center" gap={12}>
       <Typography.Title level={2}>Password reset requests</Typography.Title>
-      <Button onClick={() => void load()} loading={loading}>Refresh</Button>
+      <Button onClick={() => void load()} disabled={loading}>Refresh</Button>
     </Flex>
     <Typography.Paragraph type="secondary">Verify the user&apos;s identity, set a new password, and share it with them directly. They can choose their own password in Settings.</Typography.Paragraph>
     {error && <Alert type="error" showIcon message={error} role="alert" />}
-    <Table rowKey="id" dataSource={requests} loading={loading} scroll={{ x: 550 }} locale={{ emptyText: "No password reset requests." }} columns={[
+    {loading ? <TableSkeleton columns={3} label="Loading password reset requests" /> : <Table rowKey="id" dataSource={requests} scroll={{ x: 550 }} locale={{ emptyText: "No password reset requests." }} columns={[
       { title: "Username", dataIndex: "username" },
       { title: "Requested", dataIndex: "passwordResetRequestedAt", render: (value: string) => new Date(value).toLocaleString() },
       { title: "Action", key: "action", render: (_, account) => <Button onClick={() => { form.resetFields(); setResetError(null); setSelected(account); }}>Set new password</Button> },
-    ]} />
+    ]} />}
     <Modal title={`Reset password for ${selected?.username ?? ""}`} open={selected !== null} footer={null}
       closable={!submitting} maskClosable={!submitting} keyboard={!submitting} onCancel={() => { form.resetFields(); setSelected(null); }}>
       <Typography.Paragraph>Keep the password ready to share with this user. Existing sign-ins will be invalidated. The password cannot be retrieved after saving.</Typography.Paragraph>
