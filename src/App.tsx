@@ -11,6 +11,7 @@ import Settings from "./screens/settings/Settings";
 import "./App.css";
 import Home from "./screens/home/Home";
 import FilesScreen from "./screens/files-screen/FilesScreen";
+import PreviewScreen from "./screens/files-screen/PreviewScreen";
 import Trash from "./screens/trash/Trash";
 import StorageInfo from "./screens/storage-info/StorageInfo";
 import TransferPanel from "./components/transfer-panel/TransferPanel";
@@ -27,6 +28,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Home />} />
           <Route path="/files" element={<FilesScreen />} />
+          <Route path="/preview" element={<PreviewScreen />} />
           <Route path="/storage" element={<StorageInfo />} />
           <Route path="/trash" element={<Trash />} />
           <Route path="/admin/users" element={<PendingUsers />} />

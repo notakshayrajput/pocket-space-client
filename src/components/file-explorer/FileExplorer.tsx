@@ -1,23 +1,26 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   AppstoreOutlined,
   BarsOutlined,
   CloseCircleOutlined,
   CheckSquareOutlined,
   DownloadOutlined,
+  ExportOutlined,
   SearchOutlined,
   SortAscendingOutlined,
   SortDescendingOutlined,
 } from "@ant-design/icons";
 import { useSelector, useDispatch } from "react-redux";
 import type { FileSortDirection, FileSortField, FileSystemEntry } from "../../types";
-import { Alert, Button, Empty, Input, Modal, Segmented, Select, App, Flex, Spin } from "antd";
+import { Alert, Button, Drawer, Empty, Input, Modal, Segmented, Select, App, Flex, Spin } from "antd";
 import HttpService from "../../services/http-service";
 import "./FileExplorer.css";
 import UploadArea from "../upload-area/UploadArea";
 import FileExplorerItem from "./FileExplorerItem";
+import FilePreview from "./FilePreview";
 import { transferManager } from "../../services/transfer-manager";
+import { openPreviewTab, previewRoute } from "../../services/preview-service";
 import { clearFileCache, fetchFolderPage, folderQueryKey } from "../../store/features/fileExplorer/fileExplorerSlice";
 import type { RootState, AppDispatch } from "../../store/store";
 const FileExplorer: React.FC = () => {
@@ -37,6 +40,8 @@ const FileExplorer: React.FC = () => {
   const [creating, setCreating] = useState(false);
   const [folderName, setFolderName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [previewItem, setPreviewItem] = useState<FileSystemEntry | null>(null);
+  const navigate = useNavigate();
 
   const dispatch = useDispatch<AppDispatch>();
   const query = useMemo(() => ({
@@ -108,6 +113,7 @@ const FileExplorer: React.FC = () => {
       selected={selectedPaths.has(item.relativePath)}
       onChanged={refresh}
       onToggleSelect={() => toggleSelection(item.relativePath)}
+      onPreview={setPreviewItem}
     />
   );
   const toggleSelection = (path: string) => {
@@ -151,6 +157,17 @@ const FileExplorer: React.FC = () => {
         confirmLoading={saving} okButtonProps={{ disabled: !folderName.trim() }}>
         <Input aria-label="Folder name" value={folderName} onChange={event => setFolderName(event.target.value)} />
       </Modal>
+      <Drawer title={previewItem?.name || "Preview"} open={previewItem !== null}
+        onClose={() => setPreviewItem(null)} width={Math.min(560, window.innerWidth - 16)}
+        extra={previewItem && <Flex gap={8}>
+          <Button size="small" onClick={() => navigate(previewRoute(previewItem.relativePath))}>Open here</Button>
+          <Button size="small" icon={<ExportOutlined />} aria-label="Open preview in new tab"
+            onClick={() => openPreviewTab(previewItem.relativePath)} />
+          <Button size="small" icon={<DownloadOutlined />} aria-label="Download file"
+            onClick={() => transferManager.enqueueDownload([previewItem.relativePath], previewItem.name)} />
+        </Flex>}>
+        {previewItem && <FilePreview file={previewItem} />}
+      </Drawer>
       <Flex
         justify="space-between"
         align="center"

@@ -6,8 +6,8 @@ import {
   StarOutlined,
   DeleteOutlined,
   FolderOpenOutlined,
-  FolderOutlined,
-  FileOutlined,
+  EyeOutlined,
+  ExportOutlined,
 } from "@ant-design/icons";
 import { Button, Dropdown, App, Input, Modal, Tooltip, type MenuProps } from "antd";
 import HttpService from "../../services/http-service";
@@ -15,6 +15,8 @@ import FileService from "../../services/file-service";
 import { useNavigate } from "react-router-dom";
 import type { FileSystemEntry } from "../../types";
 import { transferManager } from "../../services/transfer-manager";
+import { openPreviewTab, previewRoute } from "../../services/preview-service";
+import FileThumbnail from "./FileThumbnail";
 
 const FileExplorerItem: React.FC<{
   item: FileSystemEntry;
@@ -24,7 +26,8 @@ const FileExplorerItem: React.FC<{
   onToggleSelect?: () => void;
   onChanged: () => void;
   showLocation?: boolean;
-}> = ({ item, viewMode, selectionMode, selected, onToggleSelect, onChanged, showLocation }) => {
+  onPreview?: (item: FileSystemEntry) => void;
+}> = ({ item, viewMode, selectionMode, selected, onToggleSelect, onChanged, showLocation, onPreview }) => {
   const navigate = useNavigate();
   const path = `/files?path=${encodeURIComponent(item.relativePath)}`;
   const { notification, modal } = App.useApp();
@@ -71,8 +74,18 @@ const FileExplorerItem: React.FC<{
     }
   };
 
+  const showPreview = () => {
+    if (onPreview) onPreview(item);
+    else navigate(previewRoute(item.relativePath));
+  };
+
   const handleClick = (e: React.MouseEvent) => {
-    if (e.ctrlKey || e.metaKey) window.open(path, "_blank");
+    if (e.ctrlKey || e.metaKey) {
+      if (isFolder) window.open(path, "_blank");
+      else openPreviewTab(item.relativePath);
+    } else if (!isFolder) {
+      showPreview();
+    }
   };
 
   const handleDownload = () => {
@@ -92,6 +105,11 @@ const FileExplorerItem: React.FC<{
         onClick: handleDownload,
         icon: <DownloadOutlined />,
       },
+      ...(!isFolder ? [
+        { key: "preview", label: "Preview", icon: <EyeOutlined />, onClick: showPreview },
+        { key: "new-tab", label: "Open preview in new tab", icon: <ExportOutlined />,
+          onClick: () => openPreviewTab(item.relativePath) },
+      ] : []),
       { key: "rename", label: "Rename", onClick: () => { setName(item.name); setRenaming(true); } },
       ...(showLocation ? [{ key: "location", label: "Open containing folder", icon: <FolderOpenOutlined />,
         onClick: () => navigate(`/files?path=${encodeURIComponent(item.relativePath.split('/').slice(0, -1).join('/') || '.')}`) }] : []),
@@ -113,7 +131,7 @@ const FileExplorerItem: React.FC<{
         }
       }}
       style={{
-        cursor: isFolder ? "pointer" : "default",
+        cursor: selectionMode || !isFolder ? "pointer" : "default",
         position: "relative",
         border: selected ? "2px solid #1890ff" : undefined,
         borderRadius: 4,
@@ -139,11 +157,7 @@ const FileExplorerItem: React.FC<{
       </Tooltip>}
 
       {/* Icon */}
-      {isFolder ? (
-        <FolderOutlined style={{ fontSize: 48 }} />
-      ) : (
-        <FileOutlined style={{ fontSize: 48 }} />
-      )}
+      <FileThumbnail item={item} />
 
       {/* Name + List mode menu */}
       <div className="file-item-bottom">
