@@ -149,3 +149,34 @@
   .sidebar.collapsed .sidebar-signout {
     margin-left: 0;
   }
+
+  @media (max-width: 720px) {
+    .sidebar,
+    .sidebar.collapsed {
+      width: 60px;
+      flex-basis: 60px;
+      padding: 8px 4px;
+    }
+
+    .sidebar .brand-title,
+    .sidebar .sidebar-text,
+    .sidebar .sidebar-account-name,
+    .sidebar .toggle-button {
+      display: none;
+    }
+
+    .sidebar .sidebar-brand,
+    .sidebar .sidebar-item {
+      justify-content: center;
+      padding-inline: 0;
+    }
+
+    .sidebar .sidebar-account-profile {
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .sidebar .sidebar-signout {
+      margin-left: 0;
+    }
+  }

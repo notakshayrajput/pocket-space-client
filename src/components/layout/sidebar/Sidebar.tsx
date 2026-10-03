@@ -28,7 +28,7 @@ const Sidebar: React.FC = () => {
   return (
     <Flex className={`sidebar ${collapsed ? "collapsed" : ""}`} vertical>
       <div className="sidebar-navigation">
-        <Link to="/" className="sidebar-link">
+        <Link to="/" className="sidebar-link" aria-label="Pocket Space" title="Pocket Space">
       <Flex className="sidebar-brand" align="center">
           <BrandLogo style={{ fontSize: 28 }} />
           {!collapsed && <span className="brand-title">Pocket Space</span>}
@@ -39,44 +39,44 @@ const Sidebar: React.FC = () => {
         {!collapsed && <span className="sidebar-text">Menu</span>}
       </Flex>
 
-        <Link to="/" className="sidebar-link">
+        <Link to="/" className="sidebar-link" aria-label="Home" title="Home">
       <Flex className="sidebar-item">
           <ProductOutlined className="sidebar-icon" />
           {!collapsed && <span className="sidebar-text">Home</span>}
       </Flex>
         </Link>
-        <Link to="/files" className="sidebar-link">
+        <Link to="/files" className="sidebar-link" aria-label="Files" title="Files">
       <Flex className="sidebar-item">
           <FolderOutlined  className="sidebar-icon" />
           {!collapsed && <span className="sidebar-text">Files</span>}
       </Flex>
         </Link>
-      <Link to="/storage" className="sidebar-link" aria-label="Storage Info">
+      <Link to="/storage" className="sidebar-link" aria-label="Storage Info" title="Storage Info">
         <Flex className="sidebar-item"><DatabaseOutlined className="sidebar-icon" />
           {!collapsed && <span className="sidebar-text">Storage Info</span>}
         </Flex>
       </Link>
-      <Link to="/trash" className="sidebar-link" aria-label="Trash">
+      <Link to="/trash" className="sidebar-link" aria-label="Trash" title="Trash">
         <Flex className="sidebar-item"><DeleteOutlined className="sidebar-icon" />
           {!collapsed && <span className="sidebar-text">Trash</span>}
         </Flex>
       </Link>
-      <Link to="/settings" className="sidebar-link" aria-label="Settings">
+      <Link to="/settings" className="sidebar-link" aria-label="Settings" title="Settings">
         <Flex className="sidebar-item"><SettingOutlined className="sidebar-icon" />
           {!collapsed && <span className="sidebar-text">Settings</span>}
         </Flex>
       </Link>
-      {user?.roles.includes("Admin") && <Link to="/admin/password-resets" className="sidebar-link" aria-label="Password resets">
+      {user?.roles.includes("Admin") && <Link to="/admin/password-resets" className="sidebar-link" aria-label="Password resets" title="Password resets">
         <Flex className="sidebar-item"><KeyOutlined className="sidebar-icon" />
           {!collapsed && <span className="sidebar-text">Password resets</span>}
         </Flex>
       </Link>}
-      {user?.roles.includes("Admin") && <Link to="/admin/quotas" className="sidebar-link" aria-label="User quotas">
+      {user?.roles.includes("Admin") && <Link to="/admin/quotas" className="sidebar-link" aria-label="User quotas" title="User quotas">
         <Flex className="sidebar-item"><DatabaseOutlined className="sidebar-icon" />
           {!collapsed && <span className="sidebar-text">User quotas</span>}
         </Flex>
       </Link>}
-      {user?.roles.includes("Admin") && <Link to="/admin/users" className="sidebar-link">
+      {user?.roles.includes("Admin") && <Link to="/admin/users" className="sidebar-link" aria-label="Approvals" title="Approvals">
         <Flex className="sidebar-item"><ProductOutlined className="sidebar-icon" />
           {!collapsed && <span className="sidebar-text">Approvals</span>}
         </Flex>

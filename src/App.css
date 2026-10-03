@@ -5,3 +5,10 @@
   margin:var(--ps-margin-medium);
   background: var(--ps-background-color-light);
 }
+
+@media (max-width: 720px) {
+  .panel {
+    margin: 6px;
+    padding: 10px;
+  }
+}
