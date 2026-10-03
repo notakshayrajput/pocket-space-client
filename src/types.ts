@@ -1,5 +1,8 @@
 export interface DriveStats {
   directory: string;
+  backend: "FileSystem" | "S3";
+  globalUsedBytes: number;
+  globalLimitBytes: number | null;
   availableSpace: number;
   totalSpace: number;
   occupiedSpace: number;

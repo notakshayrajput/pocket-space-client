@@ -1,136 +1,35 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { Alert, Card, Descriptions, Progress, Skeleton, Typography } from "antd";
 import SpaceService from "../../services/space-service";
-import { Card, Alert, Descriptions, Tooltip, Skeleton } from "antd";
 import type { DriveStats } from "../../types";
 import { formatBytes } from "../../services/util";
-import StorageProgress from "../storage-progress/StorageProgress";
-import { InfoCircleOutlined } from "@ant-design/icons";
-import { useWebSocketStatus } from "../../hooks/web-socket/WebSocket";
 
-const DriveStatsPanel: React.FC = () => {
+export default function DriveStatsPanel() {
   const [stats, setStats] = useState<DriveStats | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const { status } = useWebSocketStatus();
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const data = await SpaceService.getDriveStats();
-        setStats(data);
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : "Failed to fetch drive stats.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (!stats || status === "Connected") {
-      setError(null);
-      fetchStats();
-    }
-  }, [status]);
+    SpaceService.getDriveStats().then(setStats)
+      .catch(failure => setError(failure instanceof Error ? failure.message : "Could not load storage usage."));
+  }, []);
 
-  if (error) return <Alert type="error" message={error} />;
-
-  const skeletonContent = (
-    <Descriptions bordered column={1} size="small">
-      {[
-        "Directory",
-        "Total Space",
-        "Available",
-        "Backup Size",
-        "Unavailable",
-      ].map((label) => (
-        <Descriptions.Item label={label} key={label}>
-          <Skeleton.Input style={{ width: 200 }} active size="small" />
-        </Descriptions.Item>
-      ))}
-    </Descriptions>
-  );
-
-  const loadedContent = stats && (
-    <>
-      <Descriptions
-        bordered
-        column={1}
-        size="small"
-        style={{ marginBottom: 16 }}
-      >
-        <Descriptions.Item label="Directory">
-          {stats.directory}
-        </Descriptions.Item>
-        <Descriptions.Item
-          label={
-            <>
-              Total Space{" "}
-              <Tooltip title="Total drive size">
-                <InfoCircleOutlined />
-              </Tooltip>
-            </>
-          }
-        >
-          {formatBytes(stats.totalSpace)}
-        </Descriptions.Item>
-        <Descriptions.Item
-          label={
-            <>
-              Available{" "}
-              <Tooltip title="Space available for new data">
-                <InfoCircleOutlined />
-              </Tooltip>
-            </>
-          }
-        >
-          {formatBytes(stats.availableSpace)} (
-          {((stats.availableSpace / stats.totalSpace) * 100).toFixed(2)}%)
-        </Descriptions.Item>
-        <Descriptions.Item
-          label={
-            <>
-              Backup Size{" "}
-              <Tooltip title="Space occupied by the backup directory">
-                <InfoCircleOutlined />
-              </Tooltip>
-            </>
-          }
-        >
-          {formatBytes(stats.occupiedSpace)} (
-          {((stats.occupiedSpace / stats.totalSpace) * 100).toFixed(2)}%)
-        </Descriptions.Item>
-        <Descriptions.Item
-          label={
-            <>
-              Unavailable{" "}
-              <Tooltip title="Space occupied by stuff outside the backup directory">
-                <InfoCircleOutlined />
-              </Tooltip>
-            </>
-          }
-        >
-          {formatBytes(
-            stats.totalSpace - stats.availableSpace - stats.occupiedSpace
-          )}{" "}
-          (
-          {(
-            ((stats.totalSpace - stats.availableSpace - stats.occupiedSpace) /
-              stats.totalSpace) *
-            100
-          ).toFixed(2)}
-          %)
-        </Descriptions.Item>
+  if (error) return <Alert type="error" showIcon message={error} />;
+  return <Card title="Global storage" style={{ width: "100%", maxWidth: 640 }}>
+    {!stats ? <Skeleton active /> : <>
+      <Descriptions column={1} size="small">
+        <Descriptions.Item label="Backend">{stats.backend === "S3" ? "AWS S3" : "File system"}</Descriptions.Item>
+        <Descriptions.Item label="Stored data">{formatBytes(stats.globalUsedBytes)}</Descriptions.Item>
+        <Descriptions.Item label="Global limit">{stats.globalLimitBytes === null ? "No app limit" : formatBytes(stats.globalLimitBytes)}</Descriptions.Item>
+        {stats.backend === "FileSystem" && <>
+          <Descriptions.Item label="Disk capacity">{formatBytes(stats.totalSpace)}</Descriptions.Item>
+          <Descriptions.Item label="Disk available">{formatBytes(stats.availableSpace)}</Descriptions.Item>
+        </>}
       </Descriptions>
-
-      <div style={{ marginTop: 16 }}>
-        <StorageProgress stats={stats} />
-      </div>
-    </>
-  );
-
-  return (
-    <Card title="Drive info" style={{ width: "100%", maxWidth: 640 }}>
-      {loading ? skeletonContent : loadedContent}
-    </Card>
-  );
-};
-
-export default DriveStatsPanel;
+      {stats.globalLimitBytes !== null && <div style={{ marginTop: 16 }}>
+        <Typography.Text type="secondary">{formatBytes(Math.max(0, stats.globalLimitBytes - stats.globalUsedBytes))} available under the app limit</Typography.Text>
+        <Progress percent={Math.min(100, Math.round(stats.globalUsedBytes / stats.globalLimitBytes * 100))}
+          status={stats.globalUsedBytes >= stats.globalLimitBytes ? "exception" : "normal"} />
+      </div>}
+    </>}
+  </Card>;
+}
